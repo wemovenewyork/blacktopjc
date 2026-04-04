@@ -8,7 +8,7 @@ import {
   RobotoCondensed_700Bold,
 } from '@expo-google-fonts/roboto-condensed';
 import * as SplashScreen from 'expo-splash-screen';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import { StripeWrapper } from '@/components/StripeWrapper';
 import { RootNavigator } from '@/navigation';
 
 SplashScreen.preventAutoHideAsync();
@@ -31,13 +31,10 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StripeProvider
-          publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''}
-          urlScheme="blacktopjc"
-        >
+        <StripeWrapper>
           <StatusBar style="light" />
           <RootNavigator />
-        </StripeProvider>
+        </StripeWrapper>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
