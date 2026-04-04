@@ -21,16 +21,18 @@ export function SettingsScreen() {
   const [crewNotifs, setCrewNotifs] = useState(true);
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from('users').select('id, womens_first_mode, expo_push_token').eq('auth_id', session.user.id).single();
+      const { data } = await supabase.from('users').select('id, womens_first_mode, expo_push_token, is_admin').eq('auth_id', session.user.id).single();
       if (data) {
         setUserId(data.id);
         setWomensFirstMode(data.womens_first_mode ?? false);
         setPushToken(data.expo_push_token);
+        setIsAdmin(data.is_admin ?? false);
       }
     })();
   }, []);
@@ -132,6 +134,21 @@ export function SettingsScreen() {
           <Ionicons name="star" size={18} color={Colors.secondary} />
         </TouchableOpacity>
       </View>
+
+      {isAdmin && (
+        <>
+          <Text style={styles.sectionHeader}>ADMIN</Text>
+          <View style={styles.settingCard}>
+            <TouchableOpacity style={styles.settingRow} onPress={() => navigation.navigate('Admin')}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingTitle, { color: Colors.primary }]}>Admin Panel</Text>
+                <Text style={styles.settingDesc}>Manage users, courts, games, and crews</Text>
+              </View>
+              <Ionicons name="shield" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
         <Text style={styles.signOutText}>Sign Out</Text>

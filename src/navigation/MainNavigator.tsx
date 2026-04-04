@@ -24,6 +24,7 @@ import { PlayerProfileScreen } from '@/screens/profile/PlayerProfileScreen';
 import { EditProfileScreen } from '@/screens/profile/EditProfileScreen';
 import { SettingsScreen } from '@/screens/profile/SettingsScreen';
 import { BlacktopProScreen } from '@/screens/profile/BlacktopProScreen';
+import { AdminScreen } from '@/screens/admin/AdminScreen';
 
 // ─── Home Stack ──────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ export type ProfileStackParamList = {
   Settings: undefined;
   BlacktopPro: undefined;
   PlayerProfile: { userId: string };
+  Admin: undefined;
 };
 
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
@@ -109,6 +111,7 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'SETTINGS' }} />
       <ProfileStack.Screen name="BlacktopPro" component={BlacktopProScreen} options={{ title: 'BLACKTOP PRO' }} />
       <ProfileStack.Screen name="PlayerProfile" component={PlayerProfileScreen} options={{ title: 'PLAYER' }} />
+      <ProfileStack.Screen name="Admin" component={AdminScreen} options={{ title: 'ADMIN' }} />
     </ProfileStack.Navigator>
   );
 }
