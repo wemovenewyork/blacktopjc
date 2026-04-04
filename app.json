@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Blacktop JC",
+    "slug": "blacktopjc",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0E17"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.blacktopjc.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to show nearby courts and games.",
+        "NSCameraUsageDescription": "We use your camera to upload court and profile photos.",
+        "NSPhotoLibraryUsageDescription": "We access your photos to upload court and profile photos.",
+        "NSUserNotificationsUsageDescription": "We send you alerts for games and court activity."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0E17"
+      },
+      "package": "com.blacktopjc.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#C9082A",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Blacktop JC to use your location to find nearby courts."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Blacktop JC to access your photos for profile and court images."
+        }
+      ]
+    ],
+    "scheme": "blacktopjc",
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
+  }
+}

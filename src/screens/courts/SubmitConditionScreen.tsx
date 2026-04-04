@@ -1,0 +1,172 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { supabase } from '@/lib/supabase';
+import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
+import { NetStatus, SurfaceCondition, CrowdLevel } from '@/types';
+import { CourtsStackParamList } from '@/navigation/MainNavigator';
+
+type Route = RouteProp<CourtsStackParamList, 'SubmitCondition'>;
+
+export function SubmitConditionScreen() {
+  const navigation = useNavigation();
+  const route = useRoute<Route>();
+  const { courtId, courtName } = route.params;
+
+  const [net, setNet] = useState<NetStatus | null>(null);
+  const [surface, setSurface] = useState<SurfaceCondition | null>(null);
+  const [crowd, setCrowd] = useState<CrowdLevel | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function pickPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  }
+
+  async function handleSubmit() {
+    if (!net || !surface || !crowd) {
+      Alert.alert('Missing info', 'Please select net status, surface, and crowd level.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      const { data: user } = await supabase.from('users').select('id').eq('auth_id', session.user.id).single();
+
+      let photoUrl: string | null = null;
+      if (photoUri && user) {
+        const ext = photoUri.split('.').pop() ?? 'jpg';
+        const path = `court-conditions/${courtId}/${Date.now()}.${ext}`;
+        const response = await fetch(photoUri);
+        const blob = await response.blob();
+        const { error } = await supabase.storage.from('court-photos').upload(path, blob);
+        if (!error) {
+          const { data } = supabase.storage.from('court-photos').getPublicUrl(path);
+          photoUrl = data.publicUrl;
+        }
+      }
+
+      await supabase.from('court_conditions').insert({
+        court_id: courtId,
+        reported_by: user?.id,
+        net_status: net,
+        surface_condition: surface,
+        crowd_level: crowd,
+        photo_url: photoUrl,
+      });
+
+      Alert.alert('Thanks!', 'Condition report submitted.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>REPORT CONDITIONS</Text>
+      <Text style={styles.subtitle}>{courtName}</Text>
+
+      {/* Net Status */}
+      <Text style={styles.label}>NET STATUS</Text>
+      <View style={styles.chipRow}>
+        {(['Up', 'Down', 'Torn'] as NetStatus[]).map((v) => (
+          <Chip key={v} label={v} active={net === v} onPress={() => setNet(v)}
+            color={v === 'Up' ? Colors.success : v === 'Down' ? Colors.error : Colors.warning} />
+        ))}
+      </View>
+
+      {/* Surface */}
+      <Text style={styles.label}>SURFACE CONDITION</Text>
+      <View style={styles.chipRow}>
+        {(['Dry', 'Wet', 'Damaged'] as SurfaceCondition[]).map((v) => (
+          <Chip key={v} label={v} active={surface === v} onPress={() => setSurface(v)}
+            color={v === 'Dry' ? Colors.success : v === 'Wet' ? Colors.warning : Colors.error} />
+        ))}
+      </View>
+
+      {/* Crowd */}
+      <Text style={styles.label}>CROWD LEVEL</Text>
+      <View style={styles.chipRow}>
+        {(['Empty', 'Light', 'Moderate', 'Packed'] as CrowdLevel[]).map((v) => (
+          <Chip key={v} label={v} active={crowd === v} onPress={() => setCrowd(v)}
+            color={v === 'Empty' ? Colors.textMuted : v === 'Light' ? Colors.success : v === 'Moderate' ? Colors.warning : Colors.error} />
+        ))}
+      </View>
+
+      {/* Photo */}
+      <Text style={styles.label}>PHOTO (OPTIONAL)</Text>
+      <TouchableOpacity style={styles.photoArea} onPress={pickPhoto}>
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={styles.photo} />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <Ionicons name="camera" size={28} color={Colors.textMuted} />
+            <Text style={styles.photoPlaceholderText}>Add a photo</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.submitButton, (!net || !surface || !crowd) && styles.submitButtonDisabled]}
+        onPress={handleSubmit}
+        disabled={loading || !net || !surface || !crowd}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.submitButtonText}>SUBMIT REPORT</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+function Chip({ label, active, onPress, color }: { label: string; active: boolean; onPress: () => void; color: string }) {
+  return (
+    <TouchableOpacity
+      style={[styles.chip, active && { backgroundColor: `${color}20`, borderColor: color }]}
+      onPress={onPress}
+    >
+      <Text style={[styles.chipText, active && { color }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Spacing.md, paddingBottom: 40 },
+  title: { fontFamily: 'BebasNeue_400Regular', fontSize: 28, color: Colors.textPrimary, letterSpacing: 2 },
+  subtitle: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.md, color: Colors.textMuted, marginBottom: Spacing.xl },
+  label: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm, marginTop: Spacing.md },
+  chipRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
+  chip: { paddingHorizontal: Spacing.md, paddingVertical: 10, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: Colors.border, flex: 1, alignItems: 'center' },
+  chipText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.md, color: Colors.textMuted },
+  photoArea: { marginTop: Spacing.sm, borderRadius: BorderRadius.md, overflow: 'hidden', height: 160 },
+  photo: { width: '100%', height: '100%' },
+  photoPlaceholder: { flex: 1, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', borderRadius: BorderRadius.md, height: 160 },
+  photoPlaceholderText: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted },
+  submitButton: { backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: BorderRadius.md, alignItems: 'center', marginTop: Spacing.xl },
+  submitButtonDisabled: { opacity: 0.4 },
+  submitButtonText: { fontFamily: 'BebasNeue_400Regular', fontSize: FontSize.xl, color: '#fff', letterSpacing: 2 },
+});
