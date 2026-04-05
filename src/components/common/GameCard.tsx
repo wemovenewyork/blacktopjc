@@ -192,7 +192,7 @@ export function GameCard({ game, onJoin, onPress }: Props) {
               backgroundColor: joinBg,
             }]}>
               <Text style={[styles.joinText, {
-                color: game.my_rsvp === 'in' ? Colors.success : joinTextColor,
+                color: joinTextColor,
               }]}>
                 {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
               </Text>
