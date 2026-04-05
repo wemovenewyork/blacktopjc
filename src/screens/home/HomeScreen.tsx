@@ -205,6 +205,9 @@ export function HomeScreen() {
         {/* Dark scrim */}
         <View style={styles.heroBgScrim} />
 
+        {/* Bottom vignette — keeps stats bar readable without burying the photo */}
+        <View style={styles.heroBottomVignette} pointerEvents="none" />
+
         {/* Nav row — logo + live badge */}
         <View style={styles.headerInner}>
           <View style={styles.logoWrap}>
@@ -458,7 +461,15 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     // heavy scrim so text stays legible — dark at top, near-black at bottom
-    backgroundColor: 'rgba(0,0,0,0.72)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  heroBottomVignette: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   headerInner: {
     flexDirection: 'row',
@@ -572,9 +583,9 @@ const styles = StyleSheet.create({
   statsBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.12)',
+    borderTopColor: Colors.borderRed,
     position: 'relative',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.80)',
   },
   statBox: {
     flex: 1,
