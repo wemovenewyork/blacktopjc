@@ -7,8 +7,8 @@ import { Colors, Spacing } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
-import { HomeScreen } from '@/screens/home/HomeScreen';
-import { CourtsScreen } from '@/screens/courts/CourtsScreen';
+import { FeedScreen } from '@/screens/home/FeedScreen';
+import { MapScreen } from '@/screens/courts/MapScreen';
 import { CourtDetailScreen } from '@/screens/courts/CourtDetailScreen';
 import { SubmitConditionScreen } from '@/screens/courts/SubmitConditionScreen';
 import { GameDetailScreen } from '@/screens/games/GameDetailScreen';
@@ -40,7 +40,7 @@ const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={stackScreenOptions}>
-      <HomeStack.Screen name="Home" component={HomeScreen} options={{ title: 'BLACKTOP JC' }} />
+      <HomeStack.Screen name="Home" component={FeedScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="GameDetail" component={GameDetailScreen} options={{ title: 'GAME' }} />
       <HomeStack.Screen name="CourtDetail" component={CourtDetailScreen} options={{ title: 'COURT' }} />
       <HomeStack.Screen name="PlayerProfile" component={PlayerProfileScreen} options={{ title: 'PLAYER' }} />
@@ -61,7 +61,7 @@ const CourtsStack = createNativeStackNavigator<CourtsStackParamList>();
 function CourtsStackNavigator() {
   return (
     <CourtsStack.Navigator screenOptions={stackScreenOptions}>
-      <CourtsStack.Screen name="Courts" component={CourtsScreen} options={{ title: 'COURTS' }} />
+      <CourtsStack.Screen name="Courts" component={MapScreen} options={{ headerShown: false }} />
       <CourtsStack.Screen name="CourtDetail" component={CourtDetailScreen} options={{ title: 'COURT' }} />
       <CourtsStack.Screen name="SubmitCondition" component={SubmitConditionScreen} options={{ title: 'REPORT' }} />
     </CourtsStack.Navigator>
@@ -140,8 +140,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         const iconName = (() => {
           switch (route.name) {
-            case 'HomeTab': return isFocused ? 'home' : 'home-outline';
-            case 'CourtsTab': return isFocused ? 'location' : 'location-outline';
+            case 'HomeTab': return isFocused ? 'grid' : 'grid-outline';
+            case 'CourtsTab': return isFocused ? 'map' : 'map-outline';
             case 'CreateTab': return 'add';
             case 'CrewsTab': return isFocused ? 'people' : 'people-outline';
             case 'ProfileTab': return isFocused ? 'person' : 'person-outline';
