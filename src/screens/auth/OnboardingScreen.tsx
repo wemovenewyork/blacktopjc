@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/navigation/AuthNavigator';
 import { Colors, FontSize, Spacing } from '@/theme';
+import { supabase } from '@/lib/supabase';
+import { getCourtPhoto } from '@/lib/courtPhotos';
+import { getNeighborhoodColor } from '@/lib/neighborhoods';
+import { format, isToday } from 'date-fns';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
 
@@ -33,10 +37,30 @@ const JC_COURTS = [
 ];
 
 export function OnboardingScreen({ navigation }: Props) {
-  // Pulse animation for LIVE dot
   const pulse = useRef(new Animated.Value(1)).current;
-  // Hero content fade-in
   const heroAnim = useRef(new Animated.Value(0)).current;
+  const [liveGames, setLiveGames] = useState<any[]>([]);
+  const [gameCount, setGameCount] = useState(0);
+  const [playerCount, setPlayerCount] = useState(0);
+
+  useEffect(() => {
+    // Fetch public game data — no auth required, anon key is safe here
+    supabase
+      .from('games')
+      .select('*, court:courts(name, neighborhood), game_players(count)')
+      .in('status', ['open', 'full'])
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at', { ascending: true })
+      .limit(4)
+      .then(({ data }) => {
+        if (data) {
+          const games = data.map((g: any) => ({ ...g, player_count: g.game_players?.[0]?.count ?? 0 }));
+          setLiveGames(games);
+          setGameCount(games.length);
+          setPlayerCount(games.reduce((s: number, g: any) => s + g.player_count, 0));
+        }
+      });
+  }, []);
 
   useEffect(() => {
     Animated.timing(heroAnim, {
@@ -118,6 +142,77 @@ export function OnboardingScreen({ navigation }: Props) {
           <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.4)" />
         </View>
       </ImageBackground>
+
+      {/* ══════════════ LIVE GAMES RIGHT NOW ══════════════ */}
+      {liveGames.length > 0 && (
+        <View style={styles.liveSection}>
+          <View style={styles.liveSectionHeader}>
+            <View style={styles.livePulseDot} />
+            <Text style={styles.liveSectionTitle}>HAPPENING RIGHT NOW IN JC</Text>
+          </View>
+
+          {/* Stats row */}
+          <View style={styles.liveStats}>
+            <View style={styles.liveStat}>
+              <Text style={styles.liveStatNum}>{gameCount}</Text>
+              <Text style={styles.liveStatLabel}>OPEN GAMES</Text>
+            </View>
+            <View style={styles.liveStatDiv} />
+            <View style={styles.liveStat}>
+              <Text style={styles.liveStatNum}>{playerCount}</Text>
+              <Text style={styles.liveStatLabel}>PLAYERS IN</Text>
+            </View>
+          </View>
+
+          {/* Game preview cards */}
+          {liveGames.map((game, i) => {
+            const color = game.format === '5v5' ? Colors.primary : game.format === '3v3' ? '#3B82F6' : Colors.secondary;
+            const neighborhoodColor = getNeighborhoodColor(game.court?.neighborhood ?? '');
+            const spotsLeft = game.max_players - game.player_count;
+            const isFull = spotsLeft <= 0;
+            const timeLabel = isToday(new Date(game.scheduled_at))
+              ? `TODAY · ${format(new Date(game.scheduled_at), 'h:mm a')}`
+              : format(new Date(game.scheduled_at), 'EEE · h:mm a').toUpperCase();
+            return (
+              <TouchableOpacity
+                key={game.id}
+                style={styles.liveGameCard}
+                onPress={() => navigation.navigate('Login')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.liveGameBar, { backgroundColor: color, shadowColor: color }]} />
+                <View style={styles.liveGameBody}>
+                  <View style={styles.liveGameTop}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.liveGameCourt}>{game.court?.name ?? 'Court'}</Text>
+                      <View style={styles.liveGameMeta}>
+                        <View style={[styles.liveGameDot, { backgroundColor: neighborhoodColor }]} />
+                        <Text style={styles.liveGameNeighborhood}>{(game.court?.neighborhood ?? '').toUpperCase()}</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.liveGameFormat, { borderColor: color }]}>
+                      <Text style={[styles.liveGameFormatText, { color }]}>{game.format}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.liveGameFooter}>
+                    <Text style={styles.liveGameTime}>{timeLabel}</Text>
+                    <Text style={[styles.liveGameSpots, isFull && { color: Colors.error }]}>
+                      {isFull ? 'FULL' : `${game.player_count}/${game.max_players} IN`}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.liveGameLock}>
+                  <Ionicons name="lock-closed" size={12} color={Colors.textMuted} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          <TouchableOpacity style={styles.liveSignupCta} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.liveSignupCtaText}>JOIN TO SEE ALL GAMES →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ══════════════ FEATURES ══════════════ */}
       <View style={styles.section}>
@@ -319,6 +414,87 @@ const styles = StyleSheet.create({
     fontSize: 20, color: 'rgba(255,255,255,0.7)', letterSpacing: 2,
   },
   scrollHint: { alignItems: 'center', paddingBottom: 16, position: 'relative' },
+
+  // ── Live games section
+  liveSection: {
+    backgroundColor: '#030303',
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderRed,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    padding: Spacing.lg,
+    gap: 14,
+  },
+  liveSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  livePulseDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: Colors.success,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 6,
+  },
+  liveSectionTitle: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 10, color: Colors.success, letterSpacing: 3,
+  },
+  liveStats: {
+    flexDirection: 'row',
+    backgroundColor: '#080808',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+  },
+  liveStat: { flex: 1, alignItems: 'center', paddingVertical: 14 },
+  liveStatNum: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 40, color: Colors.primary,
+    textShadowColor: Colors.primary, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12,
+    lineHeight: 40,
+  },
+  liveStatLabel: {
+    fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.textMuted, letterSpacing: 2, marginTop: 2,
+  },
+  liveStatDiv: { width: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginVertical: 10 },
+  liveGameCard: {
+    flexDirection: 'row',
+    backgroundColor: '#080808',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    overflow: 'hidden',
+  },
+  liveGameBar: {
+    width: 4,
+    shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.7, shadowRadius: 6,
+  },
+  liveGameBody: { flex: 1, padding: 12, gap: 6 },
+  liveGameTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  liveGameCourt: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 18, color: '#FFFFFF', letterSpacing: 0.5,
+  },
+  liveGameMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  liveGameDot: { width: 5, height: 5, borderRadius: 3 },
+  liveGameNeighborhood: {
+    fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.textMuted, letterSpacing: 2,
+  },
+  liveGameFormat: {
+    borderWidth: 1, borderRadius: 2, paddingHorizontal: 7, paddingVertical: 3,
+  },
+  liveGameFormatText: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 16, letterSpacing: 1,
+  },
+  liveGameFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  liveGameTime: {
+    fontFamily: 'RobotoCondensed_700Bold', fontSize: 9, color: Colors.textMuted, letterSpacing: 1.5,
+  },
+  liveGameSpots: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 14, color: Colors.success, letterSpacing: 1,
+  },
+  liveGameLock: {
+    paddingHorizontal: 12, alignSelf: 'center',
+  },
+  liveSignupCta: {
+    borderWidth: 1, borderColor: Colors.borderRed,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  liveSignupCtaText: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 11, color: Colors.primary, letterSpacing: 3,
+  },
 
   // ── Sections
   section: {

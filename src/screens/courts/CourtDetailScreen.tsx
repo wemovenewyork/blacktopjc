@@ -39,6 +39,8 @@ export function CourtDetailScreen() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [checkinCount, setCheckinCount] = useState(0);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [gotNextQueue, setGotNextQueue] = useState<{ user_id: string; display_name: string }[]>([]);
+  const [isInNextQueue, setIsInNextQueue] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -71,6 +73,21 @@ export function CourtDetailScreen() {
     setCheckinCount(checkinsRes.data?.length ?? 0);
     setIsCheckedIn((todayCheckinsRes.data?.length ?? 0) > 0);
     setWeather(weatherData);
+
+    // Fetch "I Got Next" queue — graceful if table doesn't exist
+    try {
+      const { data: nextData } = await supabase
+        .from('court_next_up')
+        .select('user_id, user:users(display_name)')
+        .eq('court_id', courtId)
+        .order('created_at', { ascending: true });
+      if (nextData) {
+        const queue = nextData.map((r: any) => ({ user_id: r.user_id, display_name: r.user?.display_name ?? 'Player' }));
+        setGotNextQueue(queue);
+        if (userId) setIsInNextQueue(queue.some((r) => r.user_id === userId));
+      }
+    } catch {}
+
     setLoading(false);
     setRefreshing(false);
   }, [courtId]);
@@ -89,6 +106,15 @@ export function CourtDetailScreen() {
     await supabase.from('court_checkins').insert({ court_id: courtId, user_id: currentUserId });
     setIsCheckedIn(true);
     setCheckinCount((c) => c + 1);
+  }
+
+  async function handleGotNext() {
+    if (!currentUserId || isInNextQueue) return;
+    try {
+      await supabase.from('court_next_up').upsert({ court_id: courtId, user_id: currentUserId });
+      setIsInNextQueue(true);
+      setGotNextQueue((prev) => [...prev, { user_id: currentUserId, display_name: 'You' }]);
+    } catch {}
   }
 
   async function uploadCourtPhoto() {
@@ -187,16 +213,45 @@ export function CourtDetailScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={[styles.checkinButton, isCheckedIn && styles.checkinButtonDone]}
-            onPress={handleCheckin}
-            disabled={isCheckedIn}
-          >
-            <Ionicons name={isCheckedIn ? 'checkmark-circle' : 'location'} size={16} color="#fff" />
-            <Text style={styles.checkinButtonText}>
-              {isCheckedIn ? 'CHECKED IN' : 'CHECK IN'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.checkinButton, isCheckedIn && styles.checkinButtonDone, { flex: 1 }]}
+              onPress={handleCheckin}
+              disabled={isCheckedIn}
+            >
+              <Ionicons name={isCheckedIn ? 'checkmark-circle' : 'location'} size={16} color="#fff" />
+              <Text style={styles.checkinButtonText}>
+                {isCheckedIn ? 'CHECKED IN' : 'CHECK IN'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.gotNextButton, isInNextQueue && styles.gotNextButtonActive]}
+              onPress={handleGotNext}
+              disabled={isInNextQueue}
+            >
+              <Ionicons name="basketball" size={16} color={isInNextQueue ? '#000' : Colors.secondary} />
+              <Text style={[styles.gotNextText, isInNextQueue && { color: '#000' }]}>
+                {isInNextQueue ? 'GOT NEXT ✓' : 'I GOT NEXT'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Next-up queue */}
+          {gotNextQueue.length > 0 && (
+            <View style={styles.nextQueue}>
+              <Text style={styles.nextQueueLabel}>WAITING FOR NEXT RUN</Text>
+              <View style={styles.nextQueueList}>
+                {gotNextQueue.map((p, i) => (
+                  <View key={p.user_id} style={styles.nextQueueItem}>
+                    <Text style={styles.nextQueueNum}>{i + 1}</Text>
+                    <Text style={styles.nextQueueName}>{p.display_name}</Text>
+                    {i === 0 && <View style={styles.nextQueueBadge}><Text style={styles.nextQueueBadgeText}>UP NEXT</Text></View>}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Active Games */}
@@ -316,9 +371,26 @@ const styles = StyleSheet.create({
   conditionSummary: { flexDirection: 'row', gap: Spacing.xs, marginBottom: Spacing.md, flexWrap: 'wrap' },
   condPill: { borderRadius: BorderRadius.full, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1 },
   condPillText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs },
+  actionRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs },
   checkinButton: { backgroundColor: Colors.success, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, paddingVertical: 10, borderRadius: BorderRadius.md },
   checkinButtonDone: { backgroundColor: Colors.textMuted },
   checkinButtonText: { fontFamily: 'BebasNeue_400Regular', fontSize: FontSize.lg, color: '#fff', letterSpacing: 1 },
+  gotNextButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs,
+    paddingVertical: 10, paddingHorizontal: 14,
+    borderWidth: 1.5, borderColor: Colors.secondary, borderRadius: BorderRadius.md,
+    backgroundColor: 'transparent',
+  },
+  gotNextButtonActive: { backgroundColor: Colors.secondary, borderColor: Colors.secondary },
+  gotNextText: { fontFamily: 'BebasNeue_400Regular', fontSize: FontSize.lg, color: Colors.secondary, letterSpacing: 1 },
+  nextQueue: { marginTop: Spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: Spacing.md },
+  nextQueueLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 9, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm },
+  nextQueueList: { gap: 6 },
+  nextQueueItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 4 },
+  nextQueueNum: { fontFamily: 'BebasNeue_400Regular', fontSize: 18, color: Colors.textMuted, width: 20, textAlign: 'center' },
+  nextQueueName: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.md, color: Colors.textPrimary, flex: 1 },
+  nextQueueBadge: { backgroundColor: `${Colors.secondary}20`, borderWidth: 1, borderColor: Colors.secondary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
+  nextQueueBadgeText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.secondary, letterSpacing: 1.5 },
   section: { paddingHorizontal: Spacing.md, marginBottom: Spacing.lg },
   emptyGames: { paddingVertical: Spacing.md },
   emptyText: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.md, color: Colors.textMuted },
