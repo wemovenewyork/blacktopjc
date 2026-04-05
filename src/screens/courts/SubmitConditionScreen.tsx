@@ -143,7 +143,6 @@ export function SubmitConditionScreen() {
   }
 
   const badge = getScoutBadge(reportCount);
-  const nextBadge = getScoutBadge(reportCount + 1);
   const progressToNext = badge ? Math.min((reportCount - getBadgeMin(badge.label)) / (badge.next - getBadgeMin(badge.label)), 1) : reportCount / 1;
 
   return (

@@ -23,7 +23,6 @@ import { Game, GamePlayer, GameMessage, RsvpStatus } from '@/types';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
 import { Avatar } from '@/components/common/Avatar';
 import { EloBadge } from '@/components/common/EloBadge';
-import { HooperScore } from '@/components/common/HooperScore';
 import { useRealtime } from '@/hooks/useRealtime';
 import { getCourtPhoto } from '@/lib/courtPhotos';
 import { HomeStackParamList } from '@/navigation/MainNavigator';
