@@ -120,7 +120,7 @@ export function PhoneVerifyScreen({ navigation, route }: Props) {
           <TextInput
             key={index}
             ref={(ref) => { inputRefs.current[index] = ref; }}
-            style={[styles.digitInput, digit && styles.digitInputFilled]}
+            style={[styles.digitInput, !!digit && styles.digitInputFilled]}
             value={digit}
             onChangeText={(text) => handleDigitChange(text, index)}
             onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}

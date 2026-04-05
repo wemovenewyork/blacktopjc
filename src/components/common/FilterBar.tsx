@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#0A0A0A',
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: Colors.card,
   },
   chipActive: {
     borderColor: Colors.primary,

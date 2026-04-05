@@ -170,14 +170,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           <TouchableOpacity key={route.key} style={styles.tabItem} onPress={onPress}>
             <Ionicons
               name={iconName as any}
-              size={24}
-              color={isFocused ? Colors.primary : Colors.textMuted}
-              style={isFocused ? {
-                shadowColor: Colors.primary,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 8,
-              } : undefined}
+              size={22}
+              color={isFocused ? Colors.primary : '#555555'}
             />
             {isFocused && <View style={styles.tabGlowDot} />}
           </TouchableOpacity>
@@ -203,18 +197,19 @@ export function MainNavigator() {
 }
 
 const stackScreenOptions = {
-  headerStyle: { backgroundColor: Colors.background },
+  headerStyle: { backgroundColor: '#111111' },
   headerTintColor: Colors.textPrimary,
-  headerTitleStyle: { fontFamily: 'BebasNeue_400Regular', fontSize: 20, letterSpacing: 1 },
+  headerTitleStyle: { fontFamily: 'BebasNeue_400Regular', fontSize: 20, letterSpacing: 1, color: Colors.textPrimary },
+  headerShadowVisible: false,
   contentStyle: { backgroundColor: Colors.background },
 };
 
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#050505',
+    backgroundColor: '#111111',
     borderTopWidth: 1,
-    borderTopColor: Colors.borderRed,
+    borderTopColor: 'rgba(255,255,255,0.08)',
     paddingTop: Spacing.sm,
     alignItems: 'center',
   },
@@ -232,8 +227,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
+    shadowOpacity: 0.9,
+    shadowRadius: 5,
   },
   createButton: {
     flex: 1,
@@ -242,18 +237,16 @@ const styles = StyleSheet.create({
     marginTop: -24,
   },
   createButtonInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 4,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
-    shadowRadius: 16,
+    shadowRadius: 12,
     elevation: 10,
-    borderWidth: 1,
-    borderColor: `${Colors.primary}80`,
   },
 });

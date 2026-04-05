@@ -1,53 +1,69 @@
 import { EloTier, EloTierInfo } from '@/types';
 
 export const Colors = {
-  background: '#000000',
-  card: '#080808',
-  cardElevated: '#0F0F0F',
-  cardBright: '#141414',
-  primary: '#FF0033',
-  primaryDim: '#CC0029',
-  primaryGlow: 'rgba(255,0,51,0.2)',
-  secondary: '#FFB800',
-  secondaryGlow: 'rgba(255,184,0,0.2)',
-  textPrimary: '#FFFFFF',
+  // ── Backgrounds ────────────────────────────────────────────────
+  background: '#0D0D0D',
+  card: '#1A1A1A',
+  cardElevated: '#222222',
+  cardBright: '#2A2A2A',
+
+  // ── Brand ─────────────────────────────────────────────────────
+  primary: '#F5A623',           // orange — main CTA, active states
+  primaryDim: '#D4891E',
+  primaryGlow: 'rgba(245,166,35,0.22)',
+
+  secondary: '#4CAF50',         // green — active / success
+  secondaryGlow: 'rgba(76,175,80,0.22)',
+
+  accent: '#2196F3',            // blue — info / discover
+  accentGlow: 'rgba(33,150,243,0.18)',
+
+  // ── Text ──────────────────────────────────────────────────────
+  textPrimary: '#E8E8E8',
   textSecondary: '#AAAAAA',
-  textMuted: '#555555',
-  border: 'rgba(255,255,255,0.06)',
+  textMuted: '#888888',
+
+  // ── Borders ───────────────────────────────────────────────────
+  border: 'rgba(255,255,255,0.08)',
   borderBright: 'rgba(255,255,255,0.15)',
-  borderRed: 'rgba(255,0,51,0.4)',
-  borderGold: 'rgba(255,184,0,0.4)',
-  success: '#00FF88',
-  successBright: '#00FF88',
-  successGlow: 'rgba(0,255,136,0.2)',
-  warning: '#FFB800',
-  warningBright: '#FFB800',
-  error: '#FF0033',
-  overlay: 'rgba(0,0,0,0.9)',
-  green: '#00FF88',
-  yellow: '#FFB800',
-  redGlow: 'rgba(255,0,51,0.15)',
-  goldGlow: 'rgba(255,184,0,0.15)',
-  cyan: '#00FFFF',
-  cyanGlow: 'rgba(0,255,255,0.15)',
+  borderRed: 'rgba(245,166,35,0.30)',   // kept name for compatibility — now orange
+  borderGold: 'rgba(245,166,35,0.40)',
+  borderCyan: 'rgba(33,150,243,0.35)',
+
+  // ── Semantic ──────────────────────────────────────────────────
+  success: '#4CAF50',
+  successBright: '#56C568',
+  successGlow: 'rgba(76,175,80,0.25)',
+  warning: '#F5A623',
+  warningBright: '#FFBB45',
+  error: '#EF4444',
+  overlay: 'rgba(0,0,0,0.92)',
+
+  // ── Aliases ───────────────────────────────────────────────────
+  green: '#4CAF50',
+  yellow: '#F5A623',
+  redGlow: 'rgba(239,68,68,0.18)',
+  goldGlow: 'rgba(245,166,35,0.18)',
+  cyan: '#2196F3',
+  cyanGlow: 'rgba(33,150,243,0.18)',
 } as const;
 
 export const EloColors: Record<EloTier, string> = {
-  Unrated: '#333333',
-  Rookie: '#666666',
-  Starter: '#0088FF',
-  'All-Star': '#00FF88',
-  MVP: '#FFB800',
-  Legend: '#FF0033',
+  Unrated:  '#444444',
+  Rookie:   '#6B7280',
+  Starter:  '#2196F3',
+  'All-Star': '#4CAF50',
+  MVP:      '#F5A623',
+  Legend:   '#FFD700',
 };
 
 export const EloTiers: EloTierInfo[] = [
-  { label: 'Unrated', min: 0, max: 0, color: EloColors.Unrated },
-  { label: 'Rookie', min: 1, max: 999, color: EloColors.Rookie },
-  { label: 'Starter', min: 1000, max: 1199, color: EloColors.Starter },
+  { label: 'Unrated',  min: 0,    max: 0,    color: EloColors.Unrated },
+  { label: 'Rookie',   min: 1,    max: 999,  color: EloColors.Rookie },
+  { label: 'Starter',  min: 1000, max: 1199, color: EloColors.Starter },
   { label: 'All-Star', min: 1200, max: 1399, color: EloColors['All-Star'] },
-  { label: 'MVP', min: 1400, max: 1599, color: EloColors.MVP },
-  { label: 'Legend', min: 1600, max: 9999, color: EloColors.Legend },
+  { label: 'MVP',      min: 1400, max: 1599, color: EloColors.MVP },
+  { label: 'Legend',   min: 1600, max: 9999, color: EloColors.Legend },
 ];
 
 export function getEloTier(rating: number, rated: boolean): EloTier {
@@ -74,10 +90,10 @@ export const Spacing = {
 
 export const BorderRadius = {
   none: 0,
-  sm: 2,
-  md: 4,
-  lg: 8,
-  xl: 12,
+  sm: 4,
+  md: 10,
+  lg: 14,
+  xl: 20,
   full: 9999,
 } as const;
 
@@ -92,48 +108,57 @@ export const FontSize = {
   hero: 56,
 } as const;
 
+// Black-based shadows per design spec
 export const Shadow = {
   sm: {
-    shadowColor: '#FF0033',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
   md: {
-    shadowColor: '#FF0033',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 10,
   },
   lg: {
-    shadowColor: '#FF0033',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.7,
     shadowRadius: 24,
+    elevation: 16,
+  },
+  // Orange glow — used sparingly for active elements
+  gold: {
+    shadowColor: '#F5A623',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
     elevation: 14,
   },
-  gold: {
-    shadowColor: '#FFB800',
+  cyan: {
+    shadowColor: '#2196F3',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
     elevation: 12,
   },
 } as const;
 
 export const CrewColors = [
-  '#FF0033',
-  '#FFB800',
-  '#0088FF',
-  '#00FF88',
-  '#8B5CF6',
-  '#FF6600',
-  '#FF00FF',
-  '#00FFFF',
-  '#666666',
+  '#F5A623',
+  '#4CAF50',
+  '#2196F3',
+  '#E91E63',
+  '#9C27B0',
+  '#FF6F00',
+  '#00BCD4',
+  '#CDDC39',
+  '#607D8B',
   '#FFFFFF',
-  '#111111',
-  '#CC0029',
+  '#333333',
+  '#EF4444',
 ];

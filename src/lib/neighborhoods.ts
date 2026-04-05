@@ -1,21 +1,21 @@
 // Neighborhood identity colors — each JC neighborhood gets its own accent
 export const NEIGHBORHOOD_COLORS: Record<string, string> = {
-  'Downtown': '#00FFFF',          // cyan
-  'Journal Square': '#FF0033',    // red
-  'Bergen-Lafayette': '#FFB800',  // gold
-  'Greenville': '#00FF88',        // green
-  'The Heights': '#8B5CF6',       // purple
-  'West Side': '#FF6600',         // orange
-  'Bayonne': '#3B82F6',           // blue
-  'Hoboken': '#FF00FF',           // magenta
+  'Downtown':        '#F5A623',   // orange  (primary brand)
+  'Journal Square':  '#EF4444',   // red
+  'Bergen-Lafayette':'#FFD700',   // gold
+  'Greenville':      '#4CAF50',   // green
+  'The Heights':     '#8B5CF6',   // purple
+  'West Side':       '#F97316',   // deep orange
+  'Bayonne':         '#2196F3',   // blue
+  'Hoboken':         '#EC4899',   // pink
 };
 
 export function getNeighborhoodColor(neighborhood: string): string {
-  if (!neighborhood) return '#FF0033';
+  if (!neighborhood) return '#F5A623';
   const key = Object.keys(NEIGHBORHOOD_COLORS).find(
     (k) => neighborhood.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(neighborhood.toLowerCase())
   );
-  return key ? NEIGHBORHOOD_COLORS[key] : '#FF0033';
+  return key ? NEIGHBORHOOD_COLORS[key] : '#F5A623';
 }
 
 // Asphalt texture: a repeating dot-grid SVG as a data URI usable in web

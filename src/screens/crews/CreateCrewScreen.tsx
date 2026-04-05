@@ -17,7 +17,7 @@ import { Colors, FontSize, Spacing, BorderRadius, CrewColors } from '@/theme';
 export function CreateCrewScreen() {
   const navigation = useNavigation<any>();
   const [name, setName] = useState('');
-  const [color, setColor] = useState(Colors.primary);
+  const [color, setColor] = useState<string>(Colors.primary);
   const [courts, setCourts] = useState<Court[]>([]);
   const [courtSearch, setCourtSearch] = useState('');
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);

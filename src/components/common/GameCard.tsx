@@ -103,19 +103,19 @@ export function GameCard({ game, onJoin, onPress }: Props) {
       style={[
         styles.wrapper,
         {
-          borderColor: `${formatColor}40`,
+          borderColor: `${formatColor}55`,
           shadowColor: formatColor,
-          shadowOpacity: 0.18,
-          shadowRadius: 10,
-          elevation: 6,
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
+          elevation: 10,
         },
       ]}
     >
       {/* Corner brackets */}
-      <View style={[styles.bracket, styles.bracketTL, { borderColor: `${formatColor}70` }]} />
-      <View style={[styles.bracket, styles.bracketTR, { borderColor: `${formatColor}70` }]} />
-      <View style={[styles.bracket, styles.bracketBL, { borderColor: `${formatColor}70` }]} />
-      <View style={[styles.bracket, styles.bracketBR, { borderColor: `${formatColor}70` }]} />
+      <View style={[styles.bracket, styles.bracketTL, { borderColor: formatColor }]} />
+      <View style={[styles.bracket, styles.bracketTR, { borderColor: formatColor }]} />
+      <View style={[styles.bracket, styles.bracketBL, { borderColor: formatColor }]} />
+      <View style={[styles.bracket, styles.bracketBR, { borderColor: formatColor }]} />
 
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF', opacity: flashAnim, zIndex: 10 }]} pointerEvents="none" />
 
@@ -220,27 +220,33 @@ export function GameCard({ game, onJoin, onPress }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: '#070707',
-    marginBottom: 8,
+    backgroundColor: Colors.card,
+    borderRadius: 14,
+    marginBottom: 12,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 6,
   },
 
   // Corner brackets
-  bracket: { position: 'absolute', width: 10, height: 10, zIndex: 5 },
-  bracketTL: { top: 0, left: 0, borderTopWidth: 1, borderLeftWidth: 1 },
-  bracketTR: { top: 0, right: 0, borderTopWidth: 1, borderRightWidth: 1 },
-  bracketBL: { bottom: 0, left: 0, borderBottomWidth: 1, borderLeftWidth: 1 },
-  bracketBR: { bottom: 0, right: 0, borderBottomWidth: 1, borderRightWidth: 1 },
+  bracket: { position: 'absolute', width: 16, height: 16, zIndex: 5 },
+  bracketTL: { top: 0, left: 0, borderTopWidth: 2, borderLeftWidth: 2 },
+  bracketTR: { top: 0, right: 0, borderTopWidth: 2, borderRightWidth: 2 },
+  bracketBL: { bottom: 0, left: 0, borderBottomWidth: 2, borderLeftWidth: 2 },
+  bracketBR: { bottom: 0, right: 0, borderBottomWidth: 2, borderRightWidth: 2 },
 
   // Court photo top band
   photoBand: {
-    height: 72,
+    height: 96,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    gap: 10,
+    gap: 12,
   },
   photoImage: { resizeMode: 'cover' },
   photoBandScrim: {
@@ -299,46 +305,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
-    backgroundColor: '#0A0A0A',
+    paddingVertical: 10,
+    backgroundColor: Colors.card,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-    gap: 8,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    gap: 10,
   },
-  capacityBlock: { flexDirection: 'row', alignItems: 'baseline', gap: 1, minWidth: 32 },
+  capacityBlock: { flexDirection: 'row', alignItems: 'baseline', gap: 1, minWidth: 36 },
   capacityNum: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 22, color: Colors.success, lineHeight: 22,
+    fontSize: 26, color: Colors.success, lineHeight: 26,
   },
   capacityDenom: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: 10, color: Colors.textMuted,
+    fontSize: 11, color: Colors.textMuted,
   },
-  progressWrap: { flex: 1, gap: 3 },
-  progressBg: { height: 4, backgroundColor: '#1A1A1A', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: 4, borderRadius: 2 },
+  progressWrap: { flex: 1, gap: 4 },
+  progressBg: { height: 5, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: 5, borderRadius: 3 },
   spotsLabel: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: 7, color: Colors.textMuted, letterSpacing: 1.5,
+    fontSize: 8, color: Colors.textSecondary, letterSpacing: 1.5,
   },
   eloBandChip: {
-    backgroundColor: '#111',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    paddingHorizontal: 6, paddingVertical: 3, borderRadius: 2,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2,
   },
   eloBandText: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: 8, color: Colors.textMuted, letterSpacing: 1,
+    fontSize: 9, color: Colors.textSecondary, letterSpacing: 1,
   },
   joinBtn: {
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderWidth: 1.5, borderRadius: 2,
+    paddingHorizontal: 16, paddingVertical: 7,
+    borderWidth: 1.5, borderRadius: 999,
     alignItems: 'center', justifyContent: 'center',
   },
   joinText: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 16, letterSpacing: 1,
+    fontSize: 18, letterSpacing: 1.5,
   },
 
   // Host row
@@ -347,10 +353,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.04)',
-    backgroundColor: '#050505',
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#141414',
   },
   hostName: {
     fontFamily: 'RobotoCondensed_700Bold',

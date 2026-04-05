@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover"
+    />
+    <title>Blacktop JC</title>
+    <meta name="description" content="Street basketball in Jersey City. Find your run." />
+    <meta name="theme-color" content="#0D0D0D" />
+
+    <!-- Google Fonts: Barlow Condensed + DM Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;1,700&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ── CSS Variables ──────────────────────────────────────────── */
+      :root {
+        --bg-primary:    #0D0D0D;
+        --bg-card:       #1A1A1A;
+        --bg-card-alt:   #222222;
+        --accent-orange: #F5A623;
+        --accent-green:  #4CAF50;
+        --accent-blue:   #2196F3;
+        --text-primary:  #E8E8E8;
+        --text-muted:    #888888;
+        --text-white:    #FFFFFF;
+        --border-subtle: rgba(255,255,255,0.08);
+        --shadow-card:   0 4px 24px rgba(0,0,0,0.6);
+        --radius-card:   14px;
+      }
+
+      /* ── Reset ──────────────────────────────────────────────────── */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* ── Base ───────────────────────────────────────────────────── */
+      html {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Barlow Condensed', 'BebasNeue_400Regular', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        height: 100%;
+      }
+
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-x: hidden;
+      }
+
+      #root {
+        height: 100%;
+        background-color: var(--bg-primary);
+      }
+
+      /* ── Hide all scrollbars ────────────────────────────────────── */
+      ::-webkit-scrollbar { display: none; }
+      * { scrollbar-width: none; -ms-overflow-style: none; }
+
+      /* ── Typography overrides for web ────────────────────────────
+         These cascade into React Native Web's rendered elements.
+         RN Web renders fontFamily as CSS font-family, so these
+         class-level overrides won't apply — we use font injection
+         in the CSS to make Barlow Condensed available to RN Web's
+         StyleSheet fontFamily references.                           */
+
+      /* ── Input / Form elements ──────────────────────────────────── */
+      input, textarea, select {
+        background-color: #1C1C1C;
+        border: 1px solid rgba(255,255,255,0.10);
+        color: var(--text-primary);
+        border-radius: 8px;
+        font-family: 'Barlow Condensed', sans-serif;
+        outline: none;
+      }
+      input::placeholder, textarea::placeholder {
+        color: var(--text-muted);
+      }
+      input:focus, textarea:focus, select:focus {
+        border-color: rgba(245,166,35,0.5);
+        box-shadow: 0 0 0 2px rgba(245,166,35,0.12);
+      }
+
+      /* ── Link reset ─────────────────────────────────────────────── */
+      a { color: var(--accent-orange); text-decoration: none; }
+      a:hover { opacity: 0.85; }
+
+      /* ── Card hover animation ────────────────────────────────────── */
+      [data-card="true"], .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      [data-card="true"]:hover, .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+      }
+
+      /* ── Button press ────────────────────────────────────────────── */
+      button:active, [role="button"]:active {
+        transform: scale(0.97);
+        transition: transform 0.1s ease;
+      }
+
+      /* ── Page fade-in ────────────────────────────────────────────── */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .fade-in {
+        animation: fadeInUp 0.3s ease forwards;
+      }
+
+      /* ── Neon orange glow utility ────────────────────────────────── */
+      @keyframes orangePulse {
+        0%, 100% { box-shadow: 0 0 8px rgba(245,166,35,0.4); }
+        50%       { box-shadow: 0 0 20px rgba(245,166,35,0.7); }
+      }
+
+      /* ── RN Web: max-width centering (app feel on desktop) ──────── */
+      @media (min-width: 520px) {
+        #root > div > div {
+          max-width: 480px;
+          margin: 0 auto;
+        }
+      }
+
+      /* ── Star rating colors ─────────────────────────────────────── */
+      .star-filled { color: #F5A623; }
+      .star-empty  { color: #333333; }
+
+      /* ── Status badges ──────────────────────────────────────────── */
+      .badge-active {
+        background: var(--accent-green);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-family: 'DM Mono', monospace;
+      }
+      .badge-stat {
+        background: rgba(245,166,35,0.15);
+        color: var(--accent-orange);
+        border: 1px solid rgba(245,166,35,0.3);
+      }
+      .badge-muted {
+        background: rgba(255,255,255,0.08);
+        color: var(--text-muted);
+      }
+
+      /* ── Bottom nav fixed ───────────────────────────────────────── */
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #111111;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+        z-index: 1000;
+      }
+
+      /* ── Map marker style ────────────────────────────────────────── */
+      .map-pin-orange { color: var(--accent-orange); }
+      .map-pin-green  { color: var(--accent-green); }
+      .map-pin-blue   { color: var(--accent-blue); }
+
+      /* ── Skeleton shimmer ────────────────────────────────────────── */
+      @keyframes shimmer {
+        0%   { background-position: -200% 0; }
+        100% { background-position:  200% 0; }
+      }
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          #1A1A1A 25%,
+          #2A2A2A 50%,
+          #1A1A1A 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite;
+        border-radius: var(--radius-card);
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
