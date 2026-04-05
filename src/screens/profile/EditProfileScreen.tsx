@@ -53,15 +53,22 @@ export function EditProfileScreen() {
     setLoading(true);
     try {
       let avatarUrl = user.avatar_url;
-      if (avatarUri && avatarUri !== user.avatar_url) {
-        // Always use .jpg so the path is stable and upsert works reliably
+      const pickedNewPhoto = avatarUri && avatarUri !== user.avatar_url;
+
+      if (pickedNewPhoto) {
         const path = `avatars/${user.id}.jpg`;
-        const response = await fetch(avatarUri);
-        const blob = await response.blob();
+
+        // arrayBuffer works more reliably than blob with Supabase JS v2
+        const fetchRes = await fetch(avatarUri!);
+        if (!fetchRes.ok) throw new Error(`Could not read image (${fetchRes.status})`);
+        const arrayBuffer = await fetchRes.arrayBuffer();
+
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+          .upload(path, arrayBuffer, { upsert: true, contentType: 'image/jpeg' });
+
         if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
         const { data } = supabase.storage.from('avatars').getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
