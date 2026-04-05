@@ -43,10 +43,8 @@ export function SettingsScreen() {
   }
 
   async function handleSignOut() {
-    const confirmed = typeof window !== 'undefined'
-      ? window.confirm('Are you sure you want to sign out?')
-      : true;
-    if (confirmed) await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) Alert.alert('Error', error.message);
   }
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,9 @@ import {
   ImageBackground,
   Image,
   Dimensions,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '@/lib/supabase';
 import { User, PlayerStats, Crew } from '@/types';
@@ -27,7 +26,7 @@ import { ProfileStackParamList } from '@/navigation/MainNavigator';
 const { width: SCREEN_W } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
-type ContentTab = 'highlights' | 'stats' | 'record' | 'leagues';
+type ContentTab = 'highlights' | 'stats' | 'leagues';
 
 // ── Position badge ─────────────────────────────────────────────────────────
 function PositionBadge({ position }: { position: string }) {
@@ -118,6 +117,7 @@ export function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [contentTab, setContentTab] = useState<ContentTab>('stats');
+  const [avatarCacheKey, setAvatarCacheKey] = useState(() => Date.now());
 
   const fetchProfile = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -195,9 +195,10 @@ export function ProfileScreen() {
 
     setLoading(false);
     setRefreshing(false);
+    setAvatarCacheKey(Date.now());
   }, []);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  useFocusEffect(useCallback(() => { fetchProfile(); }, [fetchProfile]));
 
   if (loading) {
     return <View style={styles.loader}><BallLoader label="LOADING PROFILE..." /></View>;
@@ -231,6 +232,9 @@ export function ProfileScreen() {
         <View style={styles.bannerNav}>
           <View style={{ flex: 1 }} />
           <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
+            <Ionicons name="create-outline" size={16} color="rgba(255,255,255,0.7)" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="settings-outline" size={16} color="rgba(255,255,255,0.7)" />
           </TouchableOpacity>
         </View>
@@ -239,7 +243,7 @@ export function ProfileScreen() {
         <View style={styles.bannerIdentity}>
           <View style={[styles.avatarRing, { borderColor: tierColor, shadowColor: tierColor }]}>
             {user.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+              <Image source={{ uri: `${user.avatar_url}?v=${avatarCacheKey}` }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatarFallback, { backgroundColor: tierColor + '25' }]}>
                 <Text style={[styles.avatarInitial, { color: tierColor }]}>{user.display_name[0]}</Text>
@@ -311,7 +315,7 @@ export function ProfileScreen() {
         {crew ? (
           <TouchableOpacity
             style={[styles.crewCard, { borderLeftColor: crew.color_hex || Colors.primary, borderLeftWidth: 3 }]}
-            onPress={() => {}} // navigate to crew
+            onPress={() => navigation.getParent()?.navigate('CrewsTab')}
             activeOpacity={0.8}
           >
             <View style={[styles.crewColorDot, { backgroundColor: crew.color_hex || Colors.primary, shadowColor: crew.color_hex }]} />
@@ -322,7 +326,7 @@ export function ProfileScreen() {
             <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.joinCrewBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.joinCrewBtn} onPress={() => navigation.getParent()?.navigate('CrewsTab')}>
             <Ionicons name="people-outline" size={16} color={Colors.textMuted} />
             <Text style={styles.joinCrewText}>Join or create a crew</Text>
           </TouchableOpacity>
@@ -375,7 +379,7 @@ export function ProfileScreen() {
 
       {/* ── CONTENT TABS ──────────────────────────────────────────────── */}
       <View style={styles.contentTabBar}>
-        {(['highlights', 'stats', 'record', 'leagues'] as ContentTab[]).map((t) => (
+        {(['highlights', 'stats', 'leagues'] as ContentTab[]).map((t) => (
           <TouchableOpacity
             key={t}
             style={[styles.contentTab, contentTab === t && styles.contentTabActive]}
@@ -419,18 +423,6 @@ export function ProfileScreen() {
       )}
 
       {/* ── TAB: RECORD ───────────────────────────────────────────────── */}
-      {contentTab === 'record' && (
-        <View style={styles.tabContent}>
-          {recentStats.length === 0 ? (
-            <View style={styles.emptyTab}>
-              <Text style={styles.emptyTabText}>No game history yet</Text>
-            </View>
-          ) : (
-            recentStats.map((s) => <GameResultRow key={s.id} stat={s as any} />)
-          )}
-        </View>
-      )}
-
       {/* ── TAB: HIGHLIGHTS ───────────────────────────────────────────── */}
       {contentTab === 'highlights' && (
         <View style={styles.tabContent}>
@@ -467,7 +459,7 @@ const styles = StyleSheet.create({
   banner: { width: '100%' },
   bannerScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.72)' },
   bannerNav: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: Spacing.md, paddingTop: 52, paddingBottom: 6,
   },
   editBtn: {

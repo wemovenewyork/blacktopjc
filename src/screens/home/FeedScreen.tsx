@@ -17,13 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { formatDistanceToNow, isToday } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useRealtime } from '@/hooks/useRealtime';
 import { getCourtPhoto } from '@/lib/courtPhotos';
 import { getNeighborhoodColor } from '@/lib/neighborhoods';
 import { Colors, FontSize, Spacing } from '@/theme';
-import { Avatar } from '@/components/common/Avatar';
 import { EloBadge } from '@/components/common/EloBadge';
 import { HomeStackParamList } from '@/navigation/MainNavigator';
 
@@ -289,8 +288,6 @@ export function FeedScreen() {
   const [discoverPlayers, setDiscoverPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [notifCount] = useState(0);
-
   // Pulse dot for LIVE badge
   const pulseDot = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -305,7 +302,6 @@ export function FeedScreen() {
   const fetchData = useCallback(async () => {
     try {
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const since2h = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
       // Stories: active players (checked in today)
       const { data: checkinData } = await supabase
@@ -660,7 +656,7 @@ const styles = StyleSheet.create({
   pullUpBtn: {
     alignSelf: 'flex-end',
     paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 2,
+    borderRadius: 999,
     shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12,
   },
   pullUpBtnText: { fontFamily: 'BebasNeue_400Regular', fontSize: 16, color: '#fff', letterSpacing: 1 },

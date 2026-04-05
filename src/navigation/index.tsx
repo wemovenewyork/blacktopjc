@@ -14,19 +14,10 @@ const linking = {
   prefixes: [prefix, 'blacktopjc://', 'https://blacktopjc.app'],
   config: {
     screens: {
-      Main: {
-        screens: {
-          HomeTab: {
-            screens: {
-              GameDetail: 'game/:id',
-              CourtDetail: 'court/:id',
-            },
-          },
-        },
-      },
+      Main: 'main',
     },
   },
-};
+} as any;
 
 export function RootNavigator() {
   const [session, setSession] = useState<Session | null>(null);

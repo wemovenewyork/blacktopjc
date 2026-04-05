@@ -54,25 +54,29 @@ export function EditProfileScreen() {
     try {
       let avatarUrl = user.avatar_url;
       if (avatarUri && avatarUri !== user.avatar_url) {
-        const ext = avatarUri.split('.').pop() ?? 'jpg';
-        const path = `avatars/${user.id}.${ext}`;
+        // Always use .jpg so the path is stable and upsert works reliably
+        const path = `avatars/${user.id}.jpg`;
         const response = await fetch(avatarUri);
         const blob = await response.blob();
-        await supabase.storage.from('avatars').upload(path, blob, { upsert: true });
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
         const { data } = supabase.storage.from('avatars').getPublicUrl(path);
         avatarUrl = data.publicUrl;
       }
 
-      await supabase.from('users').update({
+      const { error: updateError } = await supabase.from('users').update({
         display_name: displayName.trim(),
         position: positions,
         neighborhood,
         avatar_url: avatarUrl,
       }).eq('id', user.id);
+      if (updateError) throw new Error(updateError.message);
 
       navigation.goBack();
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Save Failed', err.message);
     } finally {
       setLoading(false);
     }
