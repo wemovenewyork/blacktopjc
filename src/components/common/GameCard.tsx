@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { format, isToday, isTomorrow, differenceInMinutes } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Spacing } from '@/theme';
+import { Colors, FontSize, Spacing, getEloColor } from '@/theme';
 import { Game, Court, User } from '@/types';
 import { Avatar } from './Avatar';
 import { EloBadge } from './EloBadge';
@@ -41,14 +41,24 @@ const FORMAT_COLORS: Record<string, string> = {
   'Open': Colors.success,
 };
 
+const FORMAT_TEXT_COLORS: Record<string, string> = {
+  '5v5': '#FFFFFF',
+  '3v3': '#FFFFFF',
+  '21': '#000000',
+  'Open': '#000000',
+};
+
 export function GameCard({ game, onJoin, onPress }: Props) {
   const spotsLeft = game.max_players - (game.player_count ?? 0);
   const isFull = game.status === 'full' || spotsLeft <= 0;
   const formatColor = FORMAT_COLORS[game.format] ?? Colors.primary;
+  const joinTextColor = FORMAT_TEXT_COLORS[game.format] ?? '#FFFFFF';
   const spotsPercent = ((game.player_count ?? 0) / game.max_players) * 100;
   const courtPhoto = getCourtPhoto(game.court?.name ?? '');
   const neighborhoodColor = getNeighborhoodColor(game.court?.neighborhood ?? '');
   const timeInfo = formatGameTime(game.scheduled_at);
+  const isRated = (game.host?.games_until_rated ?? 3) <= 0;
+  const eloColor = game.host ? getEloColor(game.host.elo_rating, isRated) : Colors.textMuted;
 
   // Animated progress bar
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -80,7 +90,10 @@ export function GameCard({ game, onJoin, onPress }: Props) {
     }).start();
     onJoin();
   }
-  const joinBg = joinFillAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', `${formatColor}30`] });
+  const joinBg = joinFillAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [`${formatColor}00`, formatColor],
+  });
   const progressWidth = progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
 
   return (
@@ -166,7 +179,9 @@ export function GameCard({ game, onJoin, onPress }: Props) {
 
         {/* ELO band */}
         <View style={styles.eloBandChip}>
-          <Text style={styles.eloBandText}>{game.elo_band.toUpperCase()}</Text>
+          <Text style={[styles.eloBandText, { color: eloColor }]}>
+            {game.elo_band.toUpperCase()}
+          </Text>
         </View>
 
         {/* Join button */}
@@ -176,7 +191,9 @@ export function GameCard({ game, onJoin, onPress }: Props) {
               borderColor: game.my_rsvp === 'in' ? Colors.success : formatColor,
               backgroundColor: joinBg,
             }]}>
-              <Text style={[styles.joinText, { color: game.my_rsvp === 'in' ? Colors.success : formatColor }]}>
+              <Text style={[styles.joinText, {
+                color: game.my_rsvp === 'in' ? Colors.success : joinTextColor,
+              }]}>
                 {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
               </Text>
             </Animated.View>
