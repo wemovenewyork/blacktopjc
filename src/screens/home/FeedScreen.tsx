@@ -222,12 +222,18 @@ function PostCard({ post, onPressUser, onPressGame }: {
 
 // ── Discover: trending players ───────────────────────────────────────────────
 
-function DiscoverView({ players, onPressPlayer }: {
+function DiscoverView({ players, onPressPlayer, refreshing, onRefresh }: {
   players: any[];
   onPressPlayer: (userId: string) => void;
+  refreshing: boolean;
+  onRefresh: () => void;
 }) {
   return (
-    <ScrollView contentContainerStyle={styles.discoverContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={styles.discoverContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
+    >
       <Text style={styles.discoverSection}>TRENDING PLAYERS</Text>
       {players.map((p, i) => {
         const nColor = getNeighborhoodColor(p.neighborhood ?? '');
@@ -531,6 +537,8 @@ export function FeedScreen() {
         <DiscoverView
           players={discoverPlayers}
           onPressPlayer={(userId) => navigation.navigate('PlayerProfile', { userId })}
+          refreshing={refreshing}
+          onRefresh={() => { setRefreshing(true); fetchData(); }}
         />
       )}
     </View>

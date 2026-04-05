@@ -98,14 +98,14 @@ export const BorderRadius = {
 } as const;
 
 export const FontSize = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  display: 32,
-  hero: 56,
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 22,
+  xxl: 28,
+  display: 36,
+  hero: 60,
 } as const;
 
 // Black-based shadows per design spec
