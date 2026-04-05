@@ -36,7 +36,7 @@ export function GameCard({ game, onJoin, onPress }: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
       {/* Left accent bar */}
-      <View style={[styles.accentBar, { backgroundColor: formatColor }]} />
+      <View style={[styles.accentBar, { backgroundColor: formatColor, shadowColor: formatColor }]} />
 
       <View style={styles.inner}>
         {/* Top row */}
@@ -113,16 +113,20 @@ export function GameCard({ game, onJoin, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: '#070707',
+    borderRadius: 0,
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.07)',
     flexDirection: 'row',
     overflow: 'hidden',
   },
   accentBar: {
-    width: 3,
+    width: 4,
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inner: {
     flex: 1,
