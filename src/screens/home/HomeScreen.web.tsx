@@ -7,7 +7,6 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -111,8 +110,6 @@ export function HomeScreen() {
     fetchData();
   }
 
-  const activeCourts = courts.filter(c => (courtActivity[c.id] ?? 0) > 0 || games.some(g => g.court_id === c.id)).length;
-
   if (loading) return (
     <View style={styles.loader}>
       <ActivityIndicator color={Colors.primary} size="large" />
@@ -122,59 +119,72 @@ export function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.logo}>BLACKTOP</Text>
-          <Text style={styles.logoSub}>JERSEY CITY</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.liveIndicator}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
+
+      {/* ── HERO ── */}
+      <View style={styles.hero}>
+        <View style={styles.heroNav}>
+          <View style={styles.logoWrap}>
+            <View style={styles.logoBall} />
+            <Text style={styles.logoText}>BLACKTOP JC</Text>
+          </View>
+          <View style={styles.liveChip}>
+            <View style={styles.livePulse} />
+            <Text style={styles.liveLabel}>LIVE</Text>
           </View>
         </View>
-      </View>
 
-      {/* Hero stats bar */}
-      <View style={styles.statsBar}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{games.length}</Text>
-          <Text style={styles.statLabel}>OPEN GAMES</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{courts.length}</Text>
-          <Text style={styles.statLabel}>COURTS</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={[styles.statNumber, { color: Colors.successBright }]}>{activeCourts}</Text>
-          <Text style={styles.statLabel}>ACTIVE NOW</Text>
-        </View>
-      </View>
+        <View style={styles.heroBody}>
+          <Text style={styles.heroEyebrow}>The City's Game</Text>
+          <Text style={styles.heroTitle}>FIND YOUR{'\n'}
+            <Text style={styles.heroTitleRed}>RUN.</Text>
+          </Text>
+          <Text style={styles.heroSub}>
+            Jersey City pickup basketball — real courts, real players, right now.
+          </Text>
 
-      {/* Tab nav */}
-      <View style={styles.tabNav}>
-        {(['games', 'courts'] as const).map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tabNavBtn, tab === t && styles.tabNavBtnActive]}
-            onPress={() => setTab(t)}
-          >
-            <Ionicons
-              name={t === 'games' ? 'basketball' : 'location'}
-              size={14}
-              color={tab === t ? Colors.primary : Colors.textMuted}
-            />
-            <Text style={[styles.tabNavText, tab === t && styles.tabNavTextActive]}>
-              {t === 'games' ? `GAMES (${filteredGames.length})` : `COURTS (${courts.length})`}
+          <View style={styles.heroCTA}>
+            <View style={styles.ctaDot} />
+            <Text style={styles.ctaText}>
+              {games.length} GAMES OPEN · {courts.length} COURTS
             </Text>
-          </TouchableOpacity>
-        ))}
+          </View>
+        </View>
+
+        {/* Stats strip */}
+        <View style={styles.statsStrip}>
+          <StatPill value={games.length} label="OPEN GAMES" color={Colors.primary} />
+          <View style={styles.statsSep} />
+          <StatPill value={courts.filter(c => games.some(g => g.court_id === c.id)).length} label="COURTS ACTIVE" color={Colors.successBright} />
+          <View style={styles.statsSep} />
+          <StatPill value={courts.length} label="TOTAL COURTS" color={Colors.textMuted} />
+        </View>
       </View>
 
-      {/* Games tab */}
+      {/* ── SECTION LABEL + TABS ── */}
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionLabelRow}>
+          <View style={styles.sectionAccent} />
+          <Text style={styles.sectionLabel}>
+            {tab === 'games' ? 'ACTIVE GAMES' : 'JC COURTS'}
+          </Text>
+        </View>
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tabBtn, tab === 'games' && styles.tabBtnActive]}
+            onPress={() => setTab('games')}
+          >
+            <Text style={[styles.tabBtnText, tab === 'games' && styles.tabBtnTextActive]}>GAMES</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabBtn, tab === 'courts' && styles.tabBtnActive]}
+            onPress={() => setTab('courts')}
+          >
+            <Text style={[styles.tabBtnText, tab === 'courts' && styles.tabBtnTextActive]}>COURTS</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── GAMES LIST ── */}
       {tab === 'games' && (
         <FlatList
           data={filteredGames}
@@ -188,18 +198,18 @@ export function HomeScreen() {
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={Colors.primary} />}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>🏀</Text>
               <Text style={styles.emptyTitle}>NO GAMES RIGHT NOW</Text>
-              <Text style={styles.emptySubtitle}>Be the first to run one</Text>
+              <Text style={styles.emptySub}>Be the first to run one</Text>
             </View>
           }
         />
       )}
 
-      {/* Courts tab */}
+      {/* ── COURTS LIST ── */}
       {tab === 'courts' && (
         <FlatList
           data={courts}
@@ -214,268 +224,316 @@ export function HomeScreen() {
                 onPress={() => navigation.navigate('CourtDetail', { courtId: item.id })}
                 activeOpacity={0.75}
               >
-                <View style={[styles.courtAccent, { backgroundColor: color }]} />
-                <View style={styles.courtCardInner}>
+                <View style={[styles.courtBar, { backgroundColor: color }]} />
+                <View style={styles.courtCardBody}>
                   <View style={styles.courtCardTop}>
-                    <View style={styles.courtCardInfo}>
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.courtCardName}>{item.name}</Text>
-                      <View style={styles.courtCardMeta}>
-                        <Ionicons name="location" size={10} color={Colors.textMuted} />
-                        <Text style={styles.courtCardNeighborhood}>{item.neighborhood}</Text>
-                        <Text style={styles.courtCardDot}>·</Text>
-                        <Text style={styles.courtCardType}>{item.is_indoor ? 'INDOOR' : 'OUTDOOR'}</Text>
-                        {item.has_lighting && (
-                          <>
-                            <Text style={styles.courtCardDot}>·</Text>
-                            <Ionicons name="flashlight" size={10} color={Colors.textMuted} />
-                          </>
-                        )}
-                      </View>
+                      <Text style={styles.courtCardMeta}>
+                        {item.neighborhood.toUpperCase()} · {item.is_indoor ? 'INDOOR' : 'OUTDOOR'}
+                        {item.has_lighting ? ' · LIT' : ''}
+                      </Text>
                     </View>
-                    <View style={[styles.courtStatusBadge, { borderColor: color, backgroundColor: `${color}15` }]}>
+                    <View style={[styles.courtStatus, { borderColor: color }]}>
                       <Text style={[styles.courtStatusText, { color }]}>{label}</Text>
                     </View>
                   </View>
-                  <View style={styles.courtCardStats}>
-                    {gameCount > 0 && (
-                      <View style={styles.courtStat}>
-                        <Ionicons name="basketball" size={10} color={Colors.primary} />
-                        <Text style={[styles.courtStatText, { color: Colors.primary }]}>{gameCount} game{gameCount > 1 ? 's' : ''}</Text>
-                      </View>
-                    )}
-                    {checkins > 0 && (
-                      <View style={styles.courtStat}>
-                        <Ionicons name="people" size={10} color={Colors.warningBright} />
-                        <Text style={[styles.courtStatText, { color: Colors.warningBright }]}>{checkins} checked in</Text>
-                      </View>
-                    )}
-                    <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginLeft: 'auto' as any }} />
-                  </View>
+                  {(gameCount > 0 || checkins > 0) && (
+                    <View style={styles.courtCardFooter}>
+                      {gameCount > 0 && (
+                        <View style={styles.courtPill}>
+                          <View style={[styles.courtPillDot, { backgroundColor: Colors.primary }]} />
+                          <Text style={styles.courtPillText}>{gameCount} GAME{gameCount > 1 ? 'S' : ''}</Text>
+                        </View>
+                      )}
+                      {checkins > 0 && (
+                        <View style={styles.courtPill}>
+                          <View style={[styles.courtPillDot, { backgroundColor: Colors.warningBright }]} />
+                          <Text style={styles.courtPillText}>{checkins} CHECKED IN</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
                 </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ alignSelf: 'center', marginRight: Spacing.md }} />
               </TouchableOpacity>
             );
           }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={Colors.primary} />}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.list}
         />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  loader: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
-  loaderText: { fontFamily: 'BebasNeue_400Regular', fontSize: FontSize.md, color: Colors.textMuted, letterSpacing: 3 },
+function StatPill({ value, label, color }: { value: number; label: string; color: string }) {
+  return (
+    <View style={styles.statPill}>
+      <Text style={[styles.statPillNum, { color }]}>{value}</Text>
+      <Text style={styles.statPillLabel}>{label}</Text>
+    </View>
+  );
+}
 
-  // Header
-  header: {
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000000' },
+  loader: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
+  loaderText: { fontFamily: 'BebasNeue_400Regular', fontSize: FontSize.sm, color: Colors.textMuted, letterSpacing: 4 },
+
+  // ── Hero
+  hero: {
+    backgroundColor: '#000000',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  heroNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    paddingVertical: Spacing.md,
   },
-  logo: {
+  logoWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoBall: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  logoText: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 36,
-    color: Colors.primary,
-    letterSpacing: 4,
-    lineHeight: 36,
+    fontSize: 20,
+    color: '#FFFFFF',
+    letterSpacing: 3,
   },
-  logoSub: {
-    fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    letterSpacing: 4,
-    marginTop: -2,
-  },
-  headerRight: { alignItems: 'flex-end' },
-  liveIndicator: {
+  liveChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: `${Colors.successBright}15`,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: `${Colors.successBright}30`,
+    borderColor: 'rgba(34,197,94,0.4)',
+    borderRadius: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.successBright,
+  livePulse: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.successBright },
+  liveLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 10, color: Colors.successBright, letterSpacing: 2 },
+
+  heroBody: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.lg,
   },
-  liveText: {
+  heroEyebrow: {
+    fontFamily: 'RobotoCondensed_400Regular',
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  heroTitle: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 56,
+    color: '#FFFFFF',
+    letterSpacing: 2,
+    lineHeight: 54,
+    marginBottom: Spacing.sm,
+  },
+  heroTitleRed: {
+    color: Colors.primary,
+  },
+  heroSub: {
+    fontFamily: 'RobotoCondensed_400Regular',
+    fontSize: FontSize.md,
+    color: Colors.textMuted,
+    lineHeight: 20,
+    maxWidth: 300,
+    marginBottom: Spacing.md,
+  },
+  heroCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  ctaDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  ctaText: {
     fontFamily: 'RobotoCondensed_700Bold',
     fontSize: FontSize.xs,
-    color: Colors.successBright,
-    letterSpacing: 1,
+    color: Colors.textSecondary,
+    letterSpacing: 2,
   },
 
-  // Stats bar
-  statsBar: {
+  // Stats strip
+  statsStrip: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
-  statItem: {
+  statPill: {
     flex: 1,
     alignItems: 'center',
+    paddingVertical: 12,
   },
-  statNumber: {
+  statPillNum: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 32,
-    color: Colors.primary,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 28,
   },
-  statLabel: {
+  statPillLabel: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
+    fontSize: 9,
     color: Colors.textMuted,
     letterSpacing: 1.5,
     marginTop: 2,
   },
-  statDivider: {
+  statsSep: {
     width: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginVertical: 8,
   },
 
-  // Tab nav
-  tabNav: {
+  // Section header
+  sectionHeader: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 12,
+    backgroundColor: '#000000',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  tabNavBtn: {
-    flex: 1,
+  sectionLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    gap: 8,
   },
-  tabNavBtnActive: {
-    borderBottomColor: Colors.primary,
+  sectionAccent: {
+    width: 3,
+    height: 14,
+    backgroundColor: Colors.primary,
+    borderRadius: 1,
   },
-  tabNavText: {
+  sectionLabel: {
     fontFamily: 'RobotoCondensed_700Bold',
     fontSize: FontSize.xs,
+    color: Colors.textPrimary,
+    letterSpacing: 3,
+  },
+  tabs: {
+    flexDirection: 'row',
+    gap: 2,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 2,
+    padding: 2,
+  },
+  tabBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 2,
+  },
+  tabBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+  tabBtnText: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 10,
     color: Colors.textMuted,
     letterSpacing: 1.5,
   },
-  tabNavTextActive: {
-    color: Colors.primary,
+  tabBtnTextActive: {
+    color: '#FFFFFF',
   },
 
-  listContent: { padding: Spacing.md, paddingBottom: 40 },
+  list: { padding: Spacing.md, paddingBottom: 40 },
 
   // Empty state
-  empty: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    gap: Spacing.sm,
-  },
-  emptyIcon: { fontSize: 48 },
+  empty: { alignItems: 'center', paddingVertical: 60, gap: Spacing.sm },
+  emptyIcon: { fontSize: 40 },
   emptyTitle: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 24,
+    fontSize: 22,
     color: Colors.textPrimary,
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
-  emptySubtitle: {
+  emptySub: {
     fontFamily: 'RobotoCondensed_400Regular',
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     color: Colors.textMuted,
+    letterSpacing: 1,
   },
 
   // Court cards
   courtCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: '#0D0D0D',
+    borderRadius: 2,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.07)',
     overflow: 'hidden',
   },
-  courtAccent: {
-    width: 3,
-  },
-  courtCardInner: {
+  courtBar: { width: 3 },
+  courtCardBody: {
     flex: 1,
     padding: Spacing.md,
-    gap: Spacing.sm,
+    gap: 6,
   },
   courtCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: Spacing.sm,
   },
-  courtCardInfo: { flex: 1, marginRight: Spacing.sm },
   courtCardName: {
     fontFamily: 'BebasNeue_400Regular',
     fontSize: FontSize.xl,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
     letterSpacing: 0.5,
     lineHeight: 22,
   },
   courtCardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 9,
+    color: Colors.textMuted,
+    letterSpacing: 2,
     marginTop: 2,
   },
-  courtCardNeighborhood: {
-    fontFamily: 'RobotoCondensed_400Regular',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-  },
-  courtCardDot: {
-    fontFamily: 'RobotoCondensed_400Regular',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-  },
-  courtCardType: {
-    fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  courtStatusBadge: {
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  courtStatus: {
     borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   courtStatusText: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    letterSpacing: 1,
+    fontSize: 9,
+    letterSpacing: 1.5,
   },
-  courtCardStats: {
+  courtCardFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: Spacing.md,
   },
-  courtStat: {
+  courtPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 5,
   },
-  courtStatText: {
+  courtPillDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  courtPillText: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
+    fontSize: 9,
+    color: Colors.textMuted,
+    letterSpacing: 1.5,
   },
 });
