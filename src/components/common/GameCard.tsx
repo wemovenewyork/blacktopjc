@@ -84,7 +84,20 @@ export function GameCard({ game, onJoin, onPress }: Props) {
   const progressWidth = progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.9} style={styles.wrapper}>
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.9}
+      style={[
+        styles.wrapper,
+        {
+          borderColor: `${formatColor}40`,
+          shadowColor: formatColor,
+          shadowOpacity: 0.18,
+          shadowRadius: 10,
+          elevation: 6,
+        },
+      ]}
+    >
       {/* Corner brackets */}
       <View style={[styles.bracket, styles.bracketTL, { borderColor: `${formatColor}70` }]} />
       <View style={[styles.bracket, styles.bracketTR, { borderColor: `${formatColor}70` }]} />
@@ -193,7 +206,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#070707',
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
     position: 'relative',
   },
@@ -216,7 +228,7 @@ const styles = StyleSheet.create({
   photoImage: { resizeMode: 'cover' },
   photoBandScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.68)',
+    backgroundColor: 'rgba(0,0,0,0.48)',
   },
 
   // Time block
@@ -286,8 +298,8 @@ const styles = StyleSheet.create({
     fontSize: 10, color: Colors.textMuted,
   },
   progressWrap: { flex: 1, gap: 3 },
-  progressBg: { height: 3, backgroundColor: '#1A1A1A', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: 3, borderRadius: 2 },
+  progressBg: { height: 4, backgroundColor: '#1A1A1A', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 4, borderRadius: 2 },
   spotsLabel: {
     fontFamily: 'RobotoCondensed_700Bold',
     fontSize: 7, color: Colors.textMuted, letterSpacing: 1.5,
