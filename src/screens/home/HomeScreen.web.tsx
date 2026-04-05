@@ -178,8 +178,8 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  logo: { fontFamily: 'BebasNeue_400Regular', fontSize: 24, color: Colors.primary, letterSpacing: 2 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.background },
+  logo: { fontFamily: 'BebasNeue_400Regular', fontSize: 28, color: Colors.primary, letterSpacing: 3 },
   tabRow: { flexDirection: 'row', gap: 4, backgroundColor: Colors.card, borderRadius: BorderRadius.sm, padding: 2 },
   tabBtn: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: 4 },
   tabBtnActive: { backgroundColor: Colors.primary },

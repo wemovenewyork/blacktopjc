@@ -1,30 +1,38 @@
 import { EloTier, EloTierInfo } from '@/types';
 
 export const Colors = {
-  background: '#0A0E17',
-  card: '#0F1926',
-  cardElevated: '#152232',
-  primary: '#C9082A',
-  secondary: '#C8A94A',
+  background: '#080B12',
+  card: '#0D1117',
+  cardElevated: '#111720',
+  cardBright: '#161D28',
+  primary: '#E8042F',
+  primaryDim: '#C9082A',
+  secondary: '#D4A843',
   textPrimary: '#FFFFFF',
-  textSecondary: '#C8CDD6',
-  textMuted: '#7E8A9A',
-  border: 'rgba(255,255,255,0.07)',
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  overlay: 'rgba(10,14,23,0.85)',
+  textSecondary: '#B8C0CC',
+  textMuted: '#606878',
+  border: 'rgba(255,255,255,0.06)',
+  borderBright: 'rgba(255,255,255,0.12)',
+  borderRed: 'rgba(232,4,47,0.3)',
+  success: '#16A34A',
+  successBright: '#22C55E',
+  warning: '#D97706',
+  warningBright: '#F59E0B',
+  error: '#DC2626',
+  overlay: 'rgba(8,11,18,0.92)',
   green: '#22C55E',
   yellow: '#F59E0B',
+  redGlow: 'rgba(232,4,47,0.15)',
+  goldGlow: 'rgba(212,168,67,0.15)',
 } as const;
 
 export const EloColors: Record<EloTier, string> = {
-  Unrated: '#64748B',
+  Unrated: '#4B5563',
   Rookie: '#94A3B8',
   Starter: '#3B82F6',
   'All-Star': '#22C55E',
-  MVP: '#C8A94A',
-  Legend: '#C9082A',
+  MVP: '#D4A843',
+  Legend: '#E8042F',
 };
 
 export const EloTiers: EloTierInfo[] = [
@@ -59,10 +67,11 @@ export const Spacing = {
 } as const;
 
 export const BorderRadius = {
-  sm: 6,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  none: 0,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 20,
   full: 9999,
 } as const;
 
@@ -80,37 +89,37 @@ export const FontSize = {
 export const Shadow = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 3,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 8,
   },
   lg: {
-    shadowColor: '#C9082A',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  gold: {
-    shadowColor: '#C8A94A',
+    shadowColor: '#E8042F',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowRadius: 20,
+    elevation: 14,
+  },
+  gold: {
+    shadowColor: '#D4A843',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 12,
   },
 } as const;
 
 export const CrewColors = [
-  '#C9082A',
-  '#C8A94A',
+  '#E8042F',
+  '#D4A843',
   '#3B82F6',
   '#22C55E',
   '#8B5CF6',
