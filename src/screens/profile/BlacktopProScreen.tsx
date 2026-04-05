@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useStripe } from '@stripe/stripe-react-native';
-import { supabase } from '@/lib/supabase';
-import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/theme';
+import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
 
 const FEATURES = [
   { icon: 'stats-chart', text: 'Full career stat history with season-by-season charts' },
@@ -22,46 +19,16 @@ const FEATURES = [
 ];
 
 export function BlacktopProScreen() {
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubscribe() {
-    setLoading(true);
-    try {
-      // In production, your backend would create a payment intent / subscription
-      // and return client_secret. For now we show the payment sheet with a demo flow.
-      const { error: initError } = await initPaymentSheet({
-        merchantDisplayName: 'Blacktop JC',
-        // paymentIntentClientSecret: returned from your backend
-        style: 'alwaysDark',
-        primaryButtonLabel: 'Subscribe — $4.99/mo',
-      });
-
-      if (initError) throw new Error(initError.message);
-
-      const { error: presentError } = await presentPaymentSheet();
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          throw new Error(presentError.message);
-        }
-      } else {
-        // Payment success — update user record
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await supabase.from('users').update({ is_pro: true }).eq('auth_id', session.user.id);
-        }
-        Alert.alert('Welcome to Blacktop Pro! 🏆', 'Your Pro features are now active.');
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
+  function handleSubscribe() {
+    if (typeof window !== 'undefined') {
+      Alert.alert('Download the App', 'Subscribe to Blacktop Pro in the iOS or Android app.');
+    } else {
+      Alert.alert('Coming Soon', 'Pro subscriptions launching soon.');
     }
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Hero */}
       <View style={styles.hero}>
         <View style={styles.iconCircle}>
           <Ionicons name="basketball" size={48} color={Colors.secondary} />
@@ -72,7 +39,6 @@ export function BlacktopProScreen() {
         </Text>
       </View>
 
-      {/* Features */}
       <View style={styles.featuresCard}>
         {FEATURES.map(({ icon, text }, i) => (
           <View key={i} style={[styles.featureRow, i > 0 && styles.featureRowBorder]}>
@@ -84,28 +50,13 @@ export function BlacktopProScreen() {
         ))}
       </View>
 
-      {/* CTA */}
-      <TouchableOpacity
-        style={[styles.subscribeButton, Shadow.gold]}
-        onPress={handleSubscribe}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color={Colors.background} />
-        ) : (
-          <>
-            <Ionicons name="star" size={18} color={Colors.background} />
-            <Text style={styles.subscribeText}>GO PRO</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.restoreButton}>
-        <Text style={styles.restoreText}>Restore Purchase</Text>
+      <TouchableOpacity style={styles.subscribeButton} onPress={handleSubscribe}>
+        <Ionicons name="star" size={18} color={Colors.background} />
+        <Text style={styles.subscribeText}>GO PRO</Text>
       </TouchableOpacity>
 
       <Text style={styles.legal}>
-        By subscribing you agree to our Terms of Service. Cancel anytime in your App Store / Play Store settings.
+        By subscribing you agree to our Terms of Service. Cancel anytime.
         Subscription renews automatically at $4.99/month.
       </Text>
     </ScrollView>
@@ -127,7 +78,5 @@ const styles = StyleSheet.create({
   featureText: { flex: 1, fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 20 },
   subscribeButton: { backgroundColor: Colors.secondary, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 18, paddingHorizontal: Spacing.xxl, borderRadius: BorderRadius.xl, width: '100%', justifyContent: 'center', marginBottom: Spacing.md },
   subscribeText: { fontFamily: 'BebasNeue_400Regular', fontSize: 28, color: Colors.background, letterSpacing: 3 },
-  restoreButton: { paddingVertical: Spacing.sm },
-  restoreText: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted },
   legal: { fontFamily: 'RobotoCondensed_400Regular', fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.xl, lineHeight: 16 },
 });
