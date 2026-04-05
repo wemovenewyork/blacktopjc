@@ -443,34 +443,43 @@ export function FeedScreen() {
         </View>
       </View>
 
-      {/* ── STORIES ── */}
-      {stories.length > 0 && (
-        <View style={styles.storiesOuter}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storiesRow}
-          >
-            {/* Your story slot */}
-            <TouchableOpacity style={styles.storyWrap}>
-              <View style={[styles.storyRingOuter, styles.storyRingAdd]}>
-                <View style={styles.storyAddInner}>
-                  <Ionicons name="add" size={22} color={Colors.primary} />
-                </View>
+      {/* ── HIGHLIGHTS ── */}
+      <View style={styles.storiesOuter}>
+        <Text style={styles.highlightsLabel}>HIGHLIGHTS</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.storiesRow}
+        >
+          {/* Add highlight slot */}
+          <TouchableOpacity style={styles.storyWrap}>
+            <View style={[styles.storyRingOuter, styles.storyRingAdd]}>
+              <View style={styles.storyAddInner}>
+                <Ionicons name="add" size={22} color={Colors.primary} />
               </View>
-              <Text style={styles.storyName}>Your Story</Text>
-            </TouchableOpacity>
+            </View>
+            <Text style={styles.storyName}>Add</Text>
+          </TouchableOpacity>
 
-            {stories.map((s) => (
-              <StoryRing
-                key={s.id}
-                story={s}
-                onPress={() => navigation.navigate('PlayerProfile', { userId: s.id })}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      )}
+          {stories.map((s) => (
+            <StoryRing
+              key={s.id}
+              story={s}
+              onPress={() => navigation.navigate('PlayerProfile', { userId: s.id })}
+            />
+          ))}
+
+          {/* Placeholder rings while loading or empty */}
+          {stories.length === 0 && [1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={styles.storyWrap}>
+              <View style={[styles.storyRingOuter, { borderColor: 'rgba(255,255,255,0.08)' }]}>
+                <View style={[styles.storyAvatarFallback, { backgroundColor: '#1A1A1A' }]} />
+              </View>
+              <View style={styles.storyNamePlaceholder} />
+            </View>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* ── TAB BAR ── */}
       <View style={styles.feedTabBar}>
@@ -565,7 +574,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  storiesRow: { paddingHorizontal: Spacing.sm, paddingVertical: 10, gap: 4 },
+  highlightsLabel: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 9,
+    color: Colors.textMuted,
+    letterSpacing: 2.5,
+    paddingHorizontal: Spacing.md,
+    paddingTop: 10,
+  },
+  storiesRow: { paddingHorizontal: Spacing.sm, paddingVertical: 8, gap: 4 },
   storyWrap: { alignItems: 'center', width: 68, gap: 4 },
   storyRingOuter: {
     width: 58, height: 58, borderRadius: 29,
@@ -579,6 +596,7 @@ const styles = StyleSheet.create({
   storyAvatarInitial: { fontFamily: 'BebasNeue_400Regular', fontSize: 22 },
   storyNewDot: { position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#000' },
   storyName: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 0.5 },
+  storyNamePlaceholder: { width: 40, height: 8, backgroundColor: '#1A1A1A', borderRadius: 4 },
 
   // Feed tabs
   feedTabBar: {
