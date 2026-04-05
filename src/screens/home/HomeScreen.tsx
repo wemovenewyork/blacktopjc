@@ -307,12 +307,12 @@ export function HomeScreen() {
             return (
               <FadeSlideIn index={index}>
                 <TouchableOpacity
-                  style={styles.courtCard}
+                  style={[styles.courtCard, { borderColor: `${color}33` }]}
                   onPress={() => navigation.navigate('CourtDetail', { courtId: item.id })}
                   activeOpacity={0.75}
                 >
                   {/* Photo thumbnail */}
-                  <View style={styles.courtThumbWrap}>
+                  <View style={[styles.courtThumbWrap, { borderRightWidth: 1, borderRightColor: `${color}40` }]}>
                     <Image
                       source={{ uri: getCourtPhoto(item.name) }}
                       style={styles.courtThumb}
@@ -332,7 +332,7 @@ export function HomeScreen() {
                           {item.has_lighting ? ' · LIT' : ''}
                         </Text>
                       </View>
-                      <View style={[styles.courtBadge, { borderColor: color }]}>
+                      <View style={[styles.courtBadge, { borderColor: color, backgroundColor: `${color}15` }]}>
                         <View style={[styles.courtBadgeDot, { backgroundColor: color }]} />
                         <Text style={[styles.courtBadgeText, { color }]}>{label}</Text>
                       </View>
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   // Court cards
   courtCard: {
     flexDirection: 'row',
-    backgroundColor: '#080808',
+    backgroundColor: '#0C0C0C',
     borderRadius: 0,
     marginBottom: 6,
     borderWidth: 1,
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 8,
   },
   courtBody: {
     flex: 1,
