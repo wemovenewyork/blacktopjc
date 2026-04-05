@@ -18,6 +18,9 @@ import { Colors, FontSize, Spacing, BorderRadius, getEloTier, getEloColor } from
 import { Avatar } from '@/components/common/Avatar';
 import { EloBadge } from '@/components/common/EloBadge';
 import { HooperScore } from '@/components/common/HooperScore';
+import { PlayerCard } from '@/components/common/PlayerCard';
+import { EloGraph } from '@/components/common/EloGraph';
+import { BallLoader } from '@/components/common/BallLoader';
 import { ProfileStackParamList } from '@/navigation/MainNavigator';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
@@ -68,7 +71,11 @@ export function ProfileScreen() {
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
   if (loading) {
-    return <View style={styles.loader}><ActivityIndicator color={Colors.primary} size="large" /></View>;
+    return (
+      <View style={styles.loader}>
+        <BallLoader label="LOADING PROFILE..." />
+      </View>
+    );
   }
 
   if (!user) return null;
@@ -82,77 +89,60 @@ export function ProfileScreen() {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchProfile(); }} tintColor={Colors.primary} />}
     >
-      {/* Avatar + Name */}
-      <View style={styles.profileHeader}>
-        {/* Diamond glow ring behind avatar */}
-        <View style={styles.avatarWrap}>
-          <View style={[styles.avatarGlowRing, {
-            borderColor: tierColor,
-            shadowColor: tierColor,
-          }]} />
-          <View style={[styles.avatarRing, { borderColor: tierColor }]}>
-            <Avatar user={user} size={80} />
-          </View>
-        </View>
-
-        <View style={styles.nameSection}>
-          <View style={styles.nameRow}>
-            <Text style={styles.displayName}>{user.display_name}</Text>
-            {user.is_pro && (
-              <View style={styles.proBadge}>
-                <Ionicons name="star" size={10} color={Colors.secondary} />
-                <Text style={styles.proText}>PRO</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.tagsRow}>
-            {user.position?.map((pos) => (
-              <View key={pos} style={styles.posTag}>
-                <Text style={styles.posTagText}>{pos}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.neighborhood}>
-            {user.neighborhood}{user.home_court ? ` · ${(user.home_court as any).name}` : ''}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
-          <Ionicons name="pencil" size={20} color={Colors.textMuted} />
+      {/* ── TRADING CARD HERO ── */}
+      <View style={styles.cardHeroSection}>
+        <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.editBtn}>
+          <Ionicons name="pencil" size={14} color={Colors.textMuted} />
+          <Text style={styles.editBtnText}>EDIT</Text>
         </TouchableOpacity>
+        <PlayerCard
+          user={user}
+          stats={recentStats.length >= 3 ? {
+            pts: recentStats.reduce((s, g) => s + g.points, 0) / recentStats.length,
+            ast: recentStats.reduce((s, g) => s + g.assists, 0) / recentStats.length,
+            reb: recentStats.reduce((s, g) => s + g.rebounds, 0) / recentStats.length,
+            stl: recentStats.reduce((s, g) => s + g.steals, 0) / recentStats.length,
+          } : undefined}
+        />
       </View>
 
-      {/* ELO Card */}
-      <View style={[styles.card, { borderColor: `${tierColor}40` }]}>
-        <Text style={styles.cardLabel}>ELO RATING</Text>
-        <View style={styles.eloRow}>
-          <Text style={[
-            styles.eloNumber,
-            {
-              color: tierColor,
-              textShadowColor: tierColor,
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 16,
-            },
-          ]}>
-            {isRated ? user.elo_rating : '—'}
-          </Text>
-          <View style={[styles.tierBadge, {
-            backgroundColor: `${tierColor}15`,
-            borderColor: tierColor,
-            shadowColor: tierColor,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.4,
-            shadowRadius: 8,
-          }]}>
-            <Text style={[styles.tierText, { color: tierColor }]}>{tier.toUpperCase()}</Text>
+      {/* ── WIN / LOSS BAR ── */}
+      {user.total_games > 0 && (
+        <View style={styles.card}>
+          <View style={styles.wlHeader}>
+            <View style={styles.cardLabelRow}>
+              <View style={styles.cardLabelAccent} />
+              <Text style={styles.cardLabel}>WIN / LOSS</Text>
+            </View>
+            <Text style={styles.wlRate}>
+              {user.total_games > 0 ? Math.round((user.wins / user.total_games) * 100) : 0}
+              <Text style={styles.wlRateSuffix}>% WIN</Text>
+            </Text>
+          </View>
+          <View style={styles.wlBar}>
+            <View style={[styles.wlFillW, { flex: user.wins || 0.01 }]} />
+            <View style={[styles.wlFillL, { flex: user.losses || 0.01 }]} />
+          </View>
+          <View style={styles.wlLabels}>
+            <Text style={[styles.wlLabel, { color: Colors.success }]}>{user.wins}W</Text>
+            <Text style={[styles.wlLabel, { color: Colors.error }]}>{user.losses}L</Text>
           </View>
         </View>
-        {!isRated && (
-          <Text style={styles.unratedNote}>
-            Play {user.games_until_rated} more game{user.games_until_rated > 1 ? 's' : ''} to get your ELO rating
-          </Text>
-        )}
-      </View>
+      )}
+
+      {/* ── ELO GRAPH ── */}
+      {isRated && (
+        <View style={styles.card}>
+          <EloGraph
+            data={recentStats.length >= 2
+              ? recentStats.map((s, i) => ({ rating: Math.round(user.elo_rating + (i - recentStats.length) * 8 + (s.result === 'win' ? 12 : -8)) }))
+              : [{ rating: user.elo_rating - 50 }, { rating: user.elo_rating }]
+            }
+            color={tierColor}
+            height={110}
+          />
+        </View>
+      )}
 
       {/* Hooper Score */}
       <View style={styles.card}>
@@ -163,9 +153,10 @@ export function ProfileScreen() {
         />
       </View>
 
-      {/* Career Stats */}
+      {/* ── BROADCAST STATS ── */}
       <View style={styles.card}>
-        <View style={styles.cardHeaderRow}>
+        <View style={styles.cardLabelRow}>
+          <View style={styles.cardLabelAccent} />
           <Text style={styles.cardLabel}>CAREER STATS</Text>
           <View style={styles.tabToggle}>
             {(['alltime', 'season'] as const).map((t) => (
@@ -182,38 +173,30 @@ export function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.statsGrid}>
-          <StatBox label="Games" value={user.total_games} />
-          <StatBox label="W-L" value={`${user.wins}-${user.losses}`} />
-          <StatBox
-            label="Pts Avg"
-            value={recentStats.length > 0
-              ? (recentStats.reduce((s, g) => s + g.points, 0) / recentStats.length).toFixed(1)
-              : '—'}
+        <View style={styles.broadcastGrid}>
+          <BroadcastStat label="GP" value={user.total_games} color={Colors.textSecondary} />
+          <BroadcastStat label="W" value={user.wins} color={Colors.success} />
+          <BroadcastStat label="L" value={user.losses} color={Colors.error} />
+          <BroadcastStat
+            label="PPG"
+            value={recentStats.length > 0 ? (recentStats.reduce((s, g) => s + g.points, 0) / recentStats.length).toFixed(1) : '—'}
+            color={Colors.primary}
           />
-          <StatBox
-            label="Ast Avg"
-            value={recentStats.length > 0
-              ? (recentStats.reduce((s, g) => s + g.assists, 0) / recentStats.length).toFixed(1)
-              : '—'}
+          <BroadcastStat
+            label="APG"
+            value={recentStats.length > 0 ? (recentStats.reduce((s, g) => s + g.assists, 0) / recentStats.length).toFixed(1) : '—'}
+            color={Colors.success}
           />
-          <StatBox
-            label="Reb Avg"
-            value={recentStats.length > 0
-              ? (recentStats.reduce((s, g) => s + g.rebounds, 0) / recentStats.length).toFixed(1)
-              : '—'}
-          />
-          <StatBox
-            label="Stl Avg"
-            value={recentStats.length > 0
-              ? (recentStats.reduce((s, g) => s + g.steals, 0) / recentStats.length).toFixed(1)
-              : '—'}
+          <BroadcastStat
+            label="RPG"
+            value={recentStats.length > 0 ? (recentStats.reduce((s, g) => s + g.rebounds, 0) / recentStats.length).toFixed(1) : '—'}
+            color={Colors.secondary}
           />
         </View>
 
         {!user.is_pro && statTab === 'season' && (
           <TouchableOpacity style={styles.proCta} onPress={() => navigation.navigate('BlacktopPro')}>
-            <Ionicons name="lock-closed" size={16} color={Colors.secondary} />
+            <Ionicons name="lock-closed" size={14} color={Colors.secondary} />
             <Text style={styles.proCtaText}>Unlock season stats with Blacktop Pro</Text>
           </TouchableOpacity>
         )}
@@ -278,29 +261,57 @@ export function ProfileScreen() {
   );
 }
 
-function StatBox({ label, value }: { label: string; value: string | number }) {
+function BroadcastStat({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
-    <View style={styles.statBox}>
-      <Text style={styles.statBoxValue}>{value}</Text>
-      <Text style={styles.statBoxLabel}>{label}</Text>
+    <View style={[styles.broadcastStat, { borderTopColor: color }]}>
+      <Text style={[styles.broadcastValue, { color, textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }]}>
+        {value}
+      </Text>
+      <Text style={styles.broadcastLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  loader: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
-  profileHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, padding: Spacing.md },
+  container: { flex: 1, backgroundColor: '#000000' },
+  loader: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+
+  cardHeroSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    backgroundColor: '#000000',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderRed,
+  },
+  editBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    alignSelf: 'flex-end', marginRight: Spacing.md, marginBottom: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2,
+  },
+  editBtnText: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 9, color: Colors.textMuted, letterSpacing: 2,
+  },
+
+  // Win/loss bar
+  wlHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  wlRate: { fontFamily: 'BebasNeue_400Regular', fontSize: 26, color: Colors.success },
+  wlRateSuffix: { fontSize: 12, color: Colors.textMuted },
+  wlBar: { flexDirection: 'row', height: 8, overflow: 'hidden', gap: 2, borderRadius: 1 },
+  wlFillW: { backgroundColor: Colors.success, shadowColor: Colors.success, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 4 },
+  wlFillL: { backgroundColor: Colors.error, shadowColor: Colors.error, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 4 },
+  wlLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  wlLabel: { fontFamily: 'BebasNeue_400Regular', fontSize: 18, letterSpacing: 1 },
+
+  // Broadcast grid
+  broadcastGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+
   avatarWrap: { position: 'relative', width: 92, height: 92, alignItems: 'center', justifyContent: 'center' },
   avatarGlowRing: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    transform: [{ rotate: '45deg' }],
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 14,
+    position: 'absolute', width: 80, height: 80,
+    transform: [{ rotate: '45deg' }], borderWidth: 1,
+    shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 14,
   },
   avatarRing: { width: 88, height: 88, borderRadius: 44, borderWidth: 2, padding: 2, alignItems: 'center', justifyContent: 'center' },
   nameSection: { flex: 1 },
@@ -312,34 +323,37 @@ const styles = StyleSheet.create({
   posTag: { backgroundColor: `${Colors.secondary}15`, borderRadius: BorderRadius.full, paddingHorizontal: 7, paddingVertical: 1, borderWidth: 1, borderColor: Colors.secondary },
   posTagText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.secondary },
   neighborhood: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4 },
-  card: { marginHorizontal: Spacing.md, marginBottom: Spacing.md, backgroundColor: '#080808', borderRadius: 0, padding: Spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  cardLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm },
+  card: { marginHorizontal: Spacing.md, marginTop: Spacing.md, backgroundColor: '#080808', borderRadius: 0, padding: Spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+  cardLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 9, color: Colors.textMuted, letterSpacing: 3 },
+  cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md },
+  cardLabelAccent: {
+    width: 3, height: 12, backgroundColor: Colors.primary, borderRadius: 1,
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4,
+  },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
+  broadcastStat: {
+    flex: 1, minWidth: '30%',
+    alignItems: 'center', paddingVertical: 12,
+    backgroundColor: '#0A0A0A',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderTopWidth: 2,
+  },
+  broadcastValue: {
+    fontFamily: 'BebasNeue_400Regular', fontSize: 28, lineHeight: 28,
+  },
+  broadcastLabel: {
+    fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.textMuted, letterSpacing: 2, marginTop: 3,
+  },
   eloRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   eloNumber: { fontFamily: 'BebasNeue_400Regular', fontSize: 48 },
   tierBadge: { borderRadius: BorderRadius.full, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1 },
   tierText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.sm, letterSpacing: 1 },
   unratedNote: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4 },
-  tabToggle: { flexDirection: 'row', backgroundColor: Colors.cardElevated, borderRadius: BorderRadius.sm, padding: 2, gap: 2 },
-  tabBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 },
+  tabToggle: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 2, padding: 2, gap: 2, marginLeft: 'auto' as any },
+  tabBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 2 },
   tabBtnActive: { backgroundColor: Colors.primary },
-  tabBtnText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted },
-  tabBtnTextActive: { color: Colors.textPrimary },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  statBox: {
-    flex: 1,
-    minWidth: '30%',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    backgroundColor: '#0A0A0A',
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderLeftWidth: 2,
-    borderLeftColor: Colors.primary,
-  },
-  statBoxValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 26, color: Colors.textPrimary },
-  statBoxLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.textMuted, letterSpacing: 1.5 },
+  tabBtnText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 1 },
+  tabBtnTextActive: { color: '#000000' },
   proCta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md, backgroundColor: `${Colors.secondary}10`, borderRadius: BorderRadius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.secondary },
   proCtaText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.sm, color: Colors.secondary, flex: 1 },
   crewBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

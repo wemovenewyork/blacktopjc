@@ -1,11 +1,21 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
-import { format, isToday, isTomorrow } from 'date-fns';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  ImageBackground,
+} from 'react-native';
+import { format, isToday, isTomorrow, differenceInMinutes } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
+import { Colors, FontSize, Spacing } from '@/theme';
 import { Game, Court, User } from '@/types';
 import { Avatar } from './Avatar';
 import { EloBadge } from './EloBadge';
+import { getCourtPhoto } from '@/lib/courtPhotos';
+import { getNeighborhoodColor } from '@/lib/neighborhoods';
 
 interface Props {
   game: Game & { court?: Court; host?: User; player_count?: number };
@@ -13,11 +23,15 @@ interface Props {
   onPress: () => void;
 }
 
-function formatGameTime(scheduledAt: string): string {
+function formatGameTime(scheduledAt: string): { line1: string; line2: string; isUrgent: boolean } {
   const date = new Date(scheduledAt);
-  if (isToday(date)) return `TODAY · ${format(date, 'h:mm a')}`;
-  if (isTomorrow(date)) return `TOMORROW · ${format(date, 'h:mm a')}`;
-  return format(date, 'EEE MMM d · h:mm a').toUpperCase();
+  const minsUntil = differenceInMinutes(date, new Date());
+  if (minsUntil > 0 && minsUntil <= 60) {
+    return { line1: `${minsUntil}`, line2: 'MIN', isUrgent: true };
+  }
+  if (isToday(date)) return { line1: format(date, 'h:mm'), line2: format(date, 'a').toUpperCase(), isUrgent: false };
+  if (isTomorrow(date)) return { line1: 'TMW', line2: format(date, 'h:mm a'), isUrgent: false };
+  return { line1: format(date, 'EEE').toUpperCase(), line2: format(date, 'MMM d'), isUrgent: false };
 }
 
 const FORMAT_COLORS: Record<string, string> = {
@@ -32,6 +46,9 @@ export function GameCard({ game, onJoin, onPress }: Props) {
   const isFull = game.status === 'full' || spotsLeft <= 0;
   const formatColor = FORMAT_COLORS[game.format] ?? Colors.primary;
   const spotsPercent = ((game.player_count ?? 0) / game.max_players) * 100;
+  const courtPhoto = getCourtPhoto(game.court?.name ?? '');
+  const neighborhoodColor = getNeighborhoodColor(game.court?.neighborhood ?? '');
+  const timeInfo = formatGameTime(game.scheduled_at);
 
   // Animated progress bar
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -45,95 +62,79 @@ export function GameCard({ game, onJoin, onPress }: Props) {
     }).start();
   }, [spotsPercent]);
 
-  // Press flash overlay
+  // Press flash
   const flashAnim = useRef(new Animated.Value(0)).current;
   function handlePress() {
     Animated.sequence([
-      Animated.timing(flashAnim, { toValue: 0.07, duration: 70, useNativeDriver: true }),
-      Animated.timing(flashAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(flashAnim, { toValue: 0.06, duration: 60, useNativeDriver: true }),
+      Animated.timing(flashAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start();
     onPress();
   }
 
-  // Join button fill
+  // Join fill
   const joinFillAnim = useRef(new Animated.Value(game.my_rsvp === 'in' ? 1 : 0)).current;
   function handleJoin() {
     Animated.timing(joinFillAnim, {
-      toValue: 1,
-      duration: 250,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
+      toValue: 1, duration: 250, easing: Easing.out(Easing.ease), useNativeDriver: false,
     }).start();
     onJoin();
   }
-
-  const joinBg = joinFillAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['transparent', `${formatColor}28`],
-  });
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
+  const joinBg = joinFillAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', `${formatColor}30`] });
+  const progressWidth = progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
 
   return (
-    <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.85}>
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.9} style={styles.wrapper}>
       {/* Corner brackets */}
-      <View style={[styles.bracket, styles.bracketTL, { borderColor: `${formatColor}60` }]} />
-      <View style={[styles.bracket, styles.bracketTR, { borderColor: `${formatColor}60` }]} />
-      <View style={[styles.bracket, styles.bracketBL, { borderColor: `${formatColor}60` }]} />
-      <View style={[styles.bracket, styles.bracketBR, { borderColor: `${formatColor}60` }]} />
+      <View style={[styles.bracket, styles.bracketTL, { borderColor: `${formatColor}70` }]} />
+      <View style={[styles.bracket, styles.bracketTR, { borderColor: `${formatColor}70` }]} />
+      <View style={[styles.bracket, styles.bracketBL, { borderColor: `${formatColor}70` }]} />
+      <View style={[styles.bracket, styles.bracketBR, { borderColor: `${formatColor}70` }]} />
 
-      {/* Flash overlay */}
-      <Animated.View
-        style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF', opacity: flashAnim, borderRadius: 0 }]}
-        pointerEvents="none"
-      />
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF', opacity: flashAnim, zIndex: 10 }]} pointerEvents="none" />
 
-      {/* Left accent bar */}
-      <View style={[styles.accentBar, { backgroundColor: formatColor, shadowColor: formatColor }]} />
+      {/* ── TOP BAND: court photo with scoreboard overlay ── */}
+      <ImageBackground source={{ uri: courtPhoto }} style={styles.photoBand} imageStyle={styles.photoImage}>
+        <View style={styles.photoBandScrim} />
 
-      <View style={styles.inner}>
-        {/* Top row */}
-        <View style={styles.topRow}>
-          <View style={styles.courtBlock}>
-            <Text style={styles.courtName} numberOfLines={1}>
-              {game.court?.name ?? 'Unknown Court'}
-            </Text>
-            <View style={styles.courtMeta}>
-              <Ionicons name="location" size={10} color={Colors.textMuted} />
-              <Text style={styles.neighborhood}>{game.court?.neighborhood ?? '—'}</Text>
-            </View>
-          </View>
+        {/* Left: countdown / time */}
+        <View style={[styles.timeBlock, timeInfo.isUrgent && styles.timeBlockUrgent]}>
+          <Text style={[styles.timeLine1, timeInfo.isUrgent && { color: Colors.secondary }]}>{timeInfo.line1}</Text>
+          <Text style={[styles.timeLine2, timeInfo.isUrgent && { color: Colors.secondary }]}>{timeInfo.line2}</Text>
+        </View>
 
-          <View style={styles.formatBlock}>
-            <Text style={[styles.formatText, { color: formatColor, textShadowColor: formatColor, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }]}>
-              {game.format}
-            </Text>
-            {game.is_womens_only && (
-              <View style={styles.womensBadge}>
-                <Ionicons name="female" size={9} color={Colors.secondary} />
-              </View>
-            )}
+        {/* Center: court name */}
+        <View style={styles.courtBlock}>
+          <Text style={styles.courtName} numberOfLines={1}>{game.court?.name ?? 'Unknown'}</Text>
+          <View style={styles.neighborhoodRow}>
+            <View style={[styles.neighborhoodDot, { backgroundColor: neighborhoodColor }]} />
+            <Text style={styles.neighborhoodText}>{game.court?.neighborhood ?? '—'}</Text>
           </View>
         </View>
 
-        {/* Time + ELO band */}
-        <View style={styles.midRow}>
-          <View style={[styles.timeChip, { borderColor: `${Colors.primary}25` }]}>
-            <Ionicons name="time" size={10} color={Colors.primary} />
-            <Text style={styles.timeText}>{formatGameTime(game.scheduled_at)}</Text>
-          </View>
-          <View style={styles.eloBandChip}>
-            <Text style={styles.eloBandText}>{game.elo_band.toUpperCase()}</Text>
-          </View>
+        {/* Right: format badge */}
+        <View style={[styles.formatBadge, { borderColor: formatColor, backgroundColor: `${formatColor}15` }]}>
+          <Text style={[styles.formatText, { color: formatColor }]}>{game.format}</Text>
+          {game.is_womens_only && <Ionicons name="female" size={9} color={Colors.secondary} style={{ marginTop: 1 }} />}
+        </View>
+      </ImageBackground>
+
+      {/* ── BOTTOM BAND: scoreboard-style info ── */}
+      <View style={styles.infoBar}>
+        {/* Spots / capacity */}
+        <View style={styles.capacityBlock}>
+          <Text style={[styles.capacityNum, isFull && { color: Colors.error }]}>
+            {isFull ? 'FULL' : `${game.player_count ?? 0}`}
+          </Text>
+          {!isFull && (
+            <Text style={styles.capacityDenom}>/{game.max_players}</Text>
+          )}
         </View>
 
         {/* Animated progress bar */}
-        <View style={styles.progressBg}>
-          <Animated.View
-            style={[
+        <View style={styles.progressWrap}>
+          <View style={styles.progressBg}>
+            <Animated.View style={[
               styles.progressFill,
               {
                 width: progressWidth,
@@ -143,222 +144,197 @@ export function GameCard({ game, onJoin, onPress }: Props) {
                 shadowOpacity: 0.8,
                 shadowRadius: 4,
               },
-            ]}
-          />
+            ]} />
+          </View>
+          <Text style={styles.spotsLabel}>
+            {isFull ? 'GAME FULL' : `${spotsLeft} SPOT${spotsLeft !== 1 ? 'S' : ''} LEFT`}
+          </Text>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.hostRow}>
-            {game.host && (
-              <>
-                <Avatar user={game.host} size={22} />
-                <Text style={styles.hostName}>{game.host.display_name}</Text>
-                <EloBadge rating={game.host.elo_rating} rated={(game.host.games_until_rated ?? 3) <= 0} size="sm" />
-              </>
-            )}
-          </View>
-
-          <View style={styles.rightFooter}>
-            <Text style={[styles.spotsText, isFull && styles.spotsTextFull]}>
-              {isFull ? 'FULL' : `${game.player_count ?? 0}/${game.max_players}`}
-            </Text>
-            {!isFull && (
-              <TouchableOpacity
-                onPress={handleJoin}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Animated.View
-                  style={[
-                    styles.joinBtn,
-                    {
-                      borderColor: game.my_rsvp === 'in' ? Colors.success : formatColor,
-                      backgroundColor: joinBg,
-                    },
-                  ]}
-                >
-                  <Text style={[
-                    styles.joinText,
-                    { color: game.my_rsvp === 'in' ? Colors.success : formatColor },
-                  ]}>
-                    {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
-                  </Text>
-                </Animated.View>
-              </TouchableOpacity>
-            )}
-          </View>
+        {/* ELO band */}
+        <View style={styles.eloBandChip}>
+          <Text style={styles.eloBandText}>{game.elo_band.toUpperCase()}</Text>
         </View>
+
+        {/* Join button */}
+        {!isFull && (
+          <TouchableOpacity onPress={handleJoin} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Animated.View style={[styles.joinBtn, {
+              borderColor: game.my_rsvp === 'in' ? Colors.success : formatColor,
+              backgroundColor: joinBg,
+            }]}>
+              <Text style={[styles.joinText, { color: game.my_rsvp === 'in' ? Colors.success : formatColor }]}>
+                {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
+              </Text>
+            </Animated.View>
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* ── HOST ROW ── */}
+      {game.host && (
+        <View style={styles.hostRow}>
+          <Avatar user={game.host} size={18} />
+          <Text style={styles.hostName}>{game.host.display_name}</Text>
+          <EloBadge rating={game.host.elo_rating} rated={(game.host.games_until_rated ?? 3) <= 0} size="sm" />
+          {isFull && (
+            <View style={styles.fullBadge}>
+              <Text style={styles.fullBadgeText}>GAME FULL</Text>
+            </View>
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  wrapper: {
     backgroundColor: '#070707',
-    borderRadius: 0,
-    marginBottom: 6,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    flexDirection: 'row',
+    borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
     position: 'relative',
   },
 
   // Corner brackets
-  bracket: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    zIndex: 2,
-  },
+  bracket: { position: 'absolute', width: 10, height: 10, zIndex: 5 },
   bracketTL: { top: 0, left: 0, borderTopWidth: 1, borderLeftWidth: 1 },
   bracketTR: { top: 0, right: 0, borderTopWidth: 1, borderRightWidth: 1 },
   bracketBL: { bottom: 0, left: 0, borderBottomWidth: 1, borderLeftWidth: 1 },
   bracketBR: { bottom: 0, right: 0, borderBottomWidth: 1, borderRightWidth: 1 },
 
-  accentBar: {
-    width: 4,
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  inner: {
-    flex: 1,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  topRow: {
+  // Court photo top band
+  photoBand: {
+    height: 72,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    gap: 10,
   },
-  courtBlock: { flex: 1, marginRight: Spacing.sm },
+  photoImage: { resizeMode: 'cover' },
+  photoBandScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.68)',
+  },
+
+  // Time block
+  timeBlock: {
+    alignItems: 'center',
+    minWidth: 38,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  timeBlockUrgent: {
+    borderColor: `${Colors.secondary}60`,
+    backgroundColor: `${Colors.secondary}12`,
+  },
+  timeLine1: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22, color: '#FFFFFF', lineHeight: 22, letterSpacing: 1,
+  },
+  timeLine2: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 8, color: Colors.textMuted, letterSpacing: 2,
+  },
+
+  courtBlock: { flex: 1 },
   courtName: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: FontSize.xl,
-    color: Colors.textPrimary,
-    letterSpacing: 0.5,
-    lineHeight: 22,
+    fontSize: 18, color: '#FFFFFF', letterSpacing: 0.5, lineHeight: 20,
   },
-  courtMeta: {
-    flexDirection: 'row',
+  neighborhoodRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  neighborhoodDot: { width: 5, height: 5, borderRadius: 3 },
+  neighborhoodText: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 8, color: 'rgba(255,255,255,0.5)', letterSpacing: 2,
+  },
+
+  formatBadge: {
     alignItems: 'center',
-    gap: 3,
-    marginTop: 1,
-  },
-  neighborhood: {
-    fontFamily: 'RobotoCondensed_400Regular',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-  },
-  formatBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderWidth: 1, borderRadius: 2,
+    gap: 2,
   },
   formatText: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: FontSize.xxl,
-    letterSpacing: 1,
+    fontSize: 20, letterSpacing: 1,
   },
-  womensBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: `${Colors.secondary}20`,
-    borderWidth: 1,
-    borderColor: Colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  midRow: {
+
+  // Info bar
+  infoBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    backgroundColor: '#0A0A0A',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+    gap: 8,
   },
-  timeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: `${Colors.primary}08`,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderWidth: 1,
+  capacityBlock: { flexDirection: 'row', alignItems: 'baseline', gap: 1, minWidth: 32 },
+  capacityNum: {
+    fontFamily: 'BebasNeue_400Regular',
+    fontSize: 22, color: Colors.success, lineHeight: 22,
   },
-  timeText: {
+  capacityDenom: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    letterSpacing: 0.5,
+    fontSize: 10, color: Colors.textMuted,
+  },
+  progressWrap: { flex: 1, gap: 3 },
+  progressBg: { height: 3, backgroundColor: '#1A1A1A', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 3, borderRadius: 2 },
+  spotsLabel: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 7, color: Colors.textMuted, letterSpacing: 1.5,
   },
   eloBandChip: {
-    backgroundColor: Colors.cardElevated,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    backgroundColor: '#111',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.07)',
+    paddingHorizontal: 6, paddingVertical: 3, borderRadius: 2,
   },
   eloBandText: {
     fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  progressBg: {
-    height: 2,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 1,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 2,
-    borderRadius: 1,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  hostRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    flex: 1,
-  },
-  hostName: {
-    fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  rightFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  spotsText: {
-    fontFamily: 'RobotoCondensed_700Bold',
-    fontSize: FontSize.xs,
-    color: Colors.success,
-    letterSpacing: 0.5,
-  },
-  spotsTextFull: {
-    color: Colors.error,
+    fontSize: 8, color: Colors.textMuted, letterSpacing: 1,
   },
   joinBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 2,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderWidth: 1.5, borderRadius: 2,
+    alignItems: 'center', justifyContent: 'center',
   },
   joinText: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: FontSize.md,
-    letterSpacing: 1,
+    fontSize: 16, letterSpacing: 1,
+  },
+
+  // Host row
+  hostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#050505',
+  },
+  hostName: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: FontSize.xs, color: Colors.textMuted, flex: 1,
+  },
+  fullBadge: {
+    backgroundColor: `${Colors.error}15`,
+    borderWidth: 1,
+    borderColor: Colors.borderRed,
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 2,
+  },
+  fullBadgeText: {
+    fontFamily: 'RobotoCondensed_700Bold',
+    fontSize: 8, color: Colors.error, letterSpacing: 1.5,
   },
 });
