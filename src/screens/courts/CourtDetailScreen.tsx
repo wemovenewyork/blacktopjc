@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { getJCWeather } from '@/lib/weather';
+import { getCourtPhoto } from '@/lib/courtPhotos';
 import { Court, CourtCondition, Game, WeatherData } from '@/types';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/theme';
 import { GameCard } from '@/components/common/GameCard';
@@ -125,15 +126,32 @@ export function CourtDetailScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={Colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.courtName}>{court.name}</Text>
-          <View style={styles.typeBadges}>
-            <View style={styles.typeBadge}>
-              <Ionicons name={court.is_indoor ? 'home' : 'sunny'} size={12} color={Colors.textMuted} />
-              <Text style={styles.typeBadgeText}>{court.is_indoor ? 'Indoor' : 'Outdoor'}</Text>
+        {/* Hero Photo */}
+        <View style={styles.heroWrap}>
+          <Image
+            source={{ uri: getCourtPhoto(court.name) }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+          {/* Dark gradient overlay */}
+          <View style={styles.heroOverlay} />
+          {/* Court name + badges over image */}
+          <View style={styles.heroContent}>
+            <Text style={styles.courtName}>{court.name}</Text>
+            <View style={styles.typeBadges}>
+              <View style={styles.typeBadge}>
+                <Ionicons name={court.is_indoor ? 'home' : 'sunny'} size={12} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.typeBadgeText}>{court.is_indoor ? 'Indoor' : 'Outdoor'}</Text>
+              </View>
+              <View style={styles.typeBadgeSep} />
+              <Text style={styles.neighborhoodText}>{court.neighborhood.toUpperCase()}</Text>
+              {court.has_lighting && (
+                <>
+                  <View style={styles.typeBadgeSep} />
+                  <Text style={styles.neighborhoodText}>LIT</Text>
+                </>
+              )}
             </View>
-            <Text style={styles.neighborhoodText}>{court.neighborhood}</Text>
           </View>
         </View>
 
@@ -263,12 +281,27 @@ function ConditionPill({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
-  courtName: { fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: Colors.textPrimary, letterSpacing: 1 },
-  typeBadges: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 4 },
-  typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.card, borderRadius: BorderRadius.full, paddingHorizontal: 8, paddingVertical: 2 },
-  typeBadgeText: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.xs, color: Colors.textMuted },
-  neighborhoodText: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted },
+  heroWrap: { position: 'relative', height: 220, overflow: 'hidden' },
+  heroImage: { width: '100%', height: '100%' },
+  heroOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'transparent',
+    // Gradient from transparent top to near-black bottom
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%)' as any,
+  },
+  heroContent: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: Spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderRed,
+  },
+  courtName: { fontFamily: 'BebasNeue_400Regular', fontSize: 34, color: '#FFFFFF', letterSpacing: 2 },
+  typeBadges: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  typeBadgeSep: { width: 3, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
+  typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, paddingHorizontal: 7, paddingVertical: 2 },
+  typeBadgeText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: 'rgba(255,255,255,0.8)', letterSpacing: 1 },
+  neighborhoodText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', letterSpacing: 2 },
   card: { marginHorizontal: Spacing.md, marginBottom: Spacing.md, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.primary + '40', ...Shadow.lg },
   livePanel: {},
   sectionTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 16, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm },

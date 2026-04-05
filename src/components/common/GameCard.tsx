@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
@@ -24,7 +24,7 @@ const FORMAT_COLORS: Record<string, string> = {
   '5v5': Colors.primary,
   '3v3': '#3B82F6',
   '21': Colors.secondary,
-  'Open': Colors.successBright,
+  'Open': Colors.success,
 };
 
 export function GameCard({ game, onJoin, onPress }: Props) {
@@ -33,8 +33,64 @@ export function GameCard({ game, onJoin, onPress }: Props) {
   const formatColor = FORMAT_COLORS[game.format] ?? Colors.primary;
   const spotsPercent = ((game.player_count ?? 0) / game.max_players) * 100;
 
+  // Animated progress bar
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: Math.min(spotsPercent, 100),
+      duration: 700,
+      delay: 150,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [spotsPercent]);
+
+  // Press flash overlay
+  const flashAnim = useRef(new Animated.Value(0)).current;
+  function handlePress() {
+    Animated.sequence([
+      Animated.timing(flashAnim, { toValue: 0.07, duration: 70, useNativeDriver: true }),
+      Animated.timing(flashAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+    ]).start();
+    onPress();
+  }
+
+  // Join button fill
+  const joinFillAnim = useRef(new Animated.Value(game.my_rsvp === 'in' ? 1 : 0)).current;
+  function handleJoin() {
+    Animated.timing(joinFillAnim, {
+      toValue: 1,
+      duration: 250,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+    onJoin();
+  }
+
+  const joinBg = joinFillAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', `${formatColor}28`],
+  });
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.85}>
+      {/* Corner brackets */}
+      <View style={[styles.bracket, styles.bracketTL, { borderColor: `${formatColor}60` }]} />
+      <View style={[styles.bracket, styles.bracketTR, { borderColor: `${formatColor}60` }]} />
+      <View style={[styles.bracket, styles.bracketBL, { borderColor: `${formatColor}60` }]} />
+      <View style={[styles.bracket, styles.bracketBR, { borderColor: `${formatColor}60` }]} />
+
+      {/* Flash overlay */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF', opacity: flashAnim, borderRadius: 0 }]}
+        pointerEvents="none"
+      />
+
       {/* Left accent bar */}
       <View style={[styles.accentBar, { backgroundColor: formatColor, shadowColor: formatColor }]} />
 
@@ -52,7 +108,9 @@ export function GameCard({ game, onJoin, onPress }: Props) {
           </View>
 
           <View style={styles.formatBlock}>
-            <Text style={[styles.formatText, { color: formatColor }]}>{game.format}</Text>
+            <Text style={[styles.formatText, { color: formatColor, textShadowColor: formatColor, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }]}>
+              {game.format}
+            </Text>
             {game.is_womens_only && (
               <View style={styles.womensBadge}>
                 <Ionicons name="female" size={9} color={Colors.secondary} />
@@ -63,7 +121,7 @@ export function GameCard({ game, onJoin, onPress }: Props) {
 
         {/* Time + ELO band */}
         <View style={styles.midRow}>
-          <View style={styles.timeChip}>
+          <View style={[styles.timeChip, { borderColor: `${Colors.primary}25` }]}>
             <Ionicons name="time" size={10} color={Colors.primary} />
             <Text style={styles.timeText}>{formatGameTime(game.scheduled_at)}</Text>
           </View>
@@ -72,9 +130,21 @@ export function GameCard({ game, onJoin, onPress }: Props) {
           </View>
         </View>
 
-        {/* Progress bar */}
+        {/* Animated progress bar */}
         <View style={styles.progressBg}>
-          <View style={[styles.progressFill, { width: `${Math.min(spotsPercent, 100)}%` as any, backgroundColor: isFull ? Colors.error : formatColor }]} />
+          <Animated.View
+            style={[
+              styles.progressFill,
+              {
+                width: progressWidth,
+                backgroundColor: isFull ? Colors.error : formatColor,
+                shadowColor: isFull ? Colors.error : formatColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 4,
+              },
+            ]}
+          />
         </View>
 
         {/* Footer */}
@@ -95,13 +165,25 @@ export function GameCard({ game, onJoin, onPress }: Props) {
             </Text>
             {!isFull && (
               <TouchableOpacity
-                style={[styles.joinBtn, game.my_rsvp === 'in' && styles.joinBtnActive, { borderColor: formatColor }]}
-                onPress={onJoin}
+                onPress={handleJoin}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={[styles.joinText, { color: game.my_rsvp === 'in' ? Colors.successBright : formatColor }]}>
-                  {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
-                </Text>
+                <Animated.View
+                  style={[
+                    styles.joinBtn,
+                    {
+                      borderColor: game.my_rsvp === 'in' ? Colors.success : formatColor,
+                      backgroundColor: joinBg,
+                    },
+                  ]}
+                >
+                  <Text style={[
+                    styles.joinText,
+                    { color: game.my_rsvp === 'in' ? Colors.success : formatColor },
+                  ]}>
+                    {game.my_rsvp === 'in' ? '✓ IN' : 'RUN'}
+                  </Text>
+                </Animated.View>
               </TouchableOpacity>
             )}
           </View>
@@ -120,7 +202,21 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.07)',
     flexDirection: 'row',
     overflow: 'hidden',
+    position: 'relative',
   },
+
+  // Corner brackets
+  bracket: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    zIndex: 2,
+  },
+  bracketTL: { top: 0, left: 0, borderTopWidth: 1, borderLeftWidth: 1 },
+  bracketTR: { top: 0, right: 0, borderTopWidth: 1, borderRightWidth: 1 },
+  bracketBL: { bottom: 0, left: 0, borderBottomWidth: 1, borderLeftWidth: 1 },
+  bracketBR: { bottom: 0, right: 0, borderBottomWidth: 1, borderRightWidth: 1 },
+
   accentBar: {
     width: 4,
     shadowOffset: { width: 2, height: 0 },
@@ -186,12 +282,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: `${Colors.primary}10`,
+    backgroundColor: `${Colors.primary}08`,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: `${Colors.primary}25`,
   },
   timeText: {
     fontFamily: 'RobotoCondensed_700Bold',
@@ -215,7 +310,7 @@ const styles = StyleSheet.create({
   },
   progressBg: {
     height: 2,
-    backgroundColor: Colors.cardElevated,
+    backgroundColor: '#1A1A1A',
     borderRadius: 1,
     overflow: 'hidden',
   },
@@ -247,7 +342,7 @@ const styles = StyleSheet.create({
   spotsText: {
     fontFamily: 'RobotoCondensed_700Bold',
     fontSize: FontSize.xs,
-    color: Colors.successBright,
+    color: Colors.success,
     letterSpacing: 0.5,
   },
   spotsTextFull: {
@@ -256,12 +351,10 @@ const styles = StyleSheet.create({
   joinBtn: {
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: BorderRadius.sm,
+    borderRadius: 2,
     borderWidth: 1.5,
-    backgroundColor: 'transparent',
-  },
-  joinBtnActive: {
-    borderColor: Colors.successBright,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   joinText: {
     fontFamily: 'BebasNeue_400Regular',

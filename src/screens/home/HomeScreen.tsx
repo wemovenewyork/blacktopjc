@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,22 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useRealtime } from '@/hooks/useRealtime';
+import { getCourtPhoto } from '@/lib/courtPhotos';
 import { Game, Court, GameFilters } from '@/types';
-import { Colors, FontSize, Spacing, BorderRadius } from '@/theme';
+import { Colors, FontSize, Spacing } from '@/theme';
 import { GameCard } from '@/components/common/GameCard';
 import { FilterBar } from '@/components/common/FilterBar';
+import { SkeletonCard } from '@/components/common/SkeletonCard';
 import { HomeStackParamList } from '@/navigation/MainNavigator';
 import { isToday, isThisWeek } from 'date-fns';
 
@@ -31,6 +35,43 @@ const DEFAULT_FILTERS: GameFilters = {
   womensOnly: false,
 };
 
+// ── Count-up hook ──────────────────────────────────────────────
+function useCountUp(target: number, duration = 900): number {
+  const [display, setDisplay] = useState(0);
+  const anim = useRef(new Animated.Value(0));
+  useEffect(() => {
+    const id = anim.current.addListener(({ value }) => setDisplay(Math.round(value)));
+    Animated.timing(anim.current, {
+      toValue: target,
+      duration,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    return () => anim.current.removeListener(id);
+  }, [target, duration]);
+  return display;
+}
+
+// ── Staggered card wrapper ────────────────────────────────────
+function FadeSlideIn({ index, children }: { index: number; children: React.ReactNode }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 320,
+      delay: index * 55,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
+  return (
+    <Animated.View style={{ opacity: anim, transform: [{ translateY }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
@@ -42,6 +83,28 @@ export function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [courtActivity, setCourtActivity] = useState<Record<string, number>>({});
   const [tab, setTab] = useState<'games' | 'courts'>('games');
+
+  // ── Animations ────────────────────────────────────────────────
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.15,
+          duration: 850,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 850,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const fetchData = useCallback(async () => {
     const [gamesRes, courtsRes, checkinsRes] = await Promise.all([
@@ -93,6 +156,13 @@ export function HomeScreen() {
     return true;
   });
 
+  const activeCourtsCount = courts.filter(c => games.some(g => g.court_id === c.id)).length;
+
+  // Count-up stats
+  const displayGames = useCountUp(games.length);
+  const displayActiveCourts = useCountUp(activeCourtsCount);
+  const displayTotalCourts = useCountUp(courts.length);
+
   function getCourtStatus(courtId: string): { color: string; label: string } {
     const hasGame = games.some((g) => g.court_id === courtId && g.status === 'open');
     if (hasGame) return { color: Colors.success, label: 'GAME ON' };
@@ -110,22 +180,23 @@ export function HomeScreen() {
     fetchData();
   }
 
-  if (loading) return (
-    <View style={styles.loader}>
-      <View style={styles.loaderDiamond} />
-      <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: 16 }} />
-      <Text style={styles.loaderText}>LOADING COURTS...</Text>
-    </View>
-  );
+  // Skeleton loading state
+  if (loading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <SkeletonHeader />
+        <View style={styles.skeletonList}>
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
 
       {/* ── HEADER ── */}
       <View style={styles.header}>
-        {/* Grid lines for futuristic feel */}
-        <View style={styles.headerGridLine} />
-
         <View style={styles.headerInner}>
           {/* Logo */}
           <View style={styles.logoWrap}>
@@ -134,9 +205,9 @@ export function HomeScreen() {
             <Text style={styles.logoTextRed}>JC</Text>
           </View>
 
-          {/* Live indicator */}
+          {/* Live indicator with pulse */}
           <View style={styles.liveWrap}>
-            <View style={styles.liveDot} />
+            <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
             <Text style={styles.liveText}>LIVE</Text>
           </View>
         </View>
@@ -148,22 +219,16 @@ export function HomeScreen() {
             FIND YOUR{'\n'}<Text style={styles.heroRed}>RUN.</Text>
           </Text>
           <View style={styles.heroRule} />
-          <Text style={styles.heroSub}>
-            Real courts · Real players · Right now
-          </Text>
+          <Text style={styles.heroSub}>Real courts · Real players · Right now</Text>
         </View>
 
-        {/* Stats bar */}
+        {/* Stats bar with count-up */}
         <View style={styles.statsBar}>
-          <StatBox value={games.length} label="GAMES OPEN" color={Colors.primary} />
+          <StatBox value={displayGames} label="GAMES OPEN" color={Colors.primary} />
           <View style={styles.statsDivider} />
-          <StatBox
-            value={courts.filter(c => games.some(g => g.court_id === c.id)).length}
-            label="COURTS HOT"
-            color={Colors.success}
-          />
+          <StatBox value={displayActiveCourts} label="COURTS HOT" color={Colors.success} />
           <View style={styles.statsDivider} />
-          <StatBox value={courts.length} label="TOTAL COURTS" color={Colors.textSecondary} />
+          <StatBox value={displayTotalCourts} label="TOTAL COURTS" color={Colors.textSecondary} />
         </View>
       </View>
 
@@ -192,12 +257,14 @@ export function HomeScreen() {
           data={filteredGames}
           keyExtractor={(g) => g.id}
           ListHeaderComponent={<FilterBar filters={filters} onChange={setFilters} />}
-          renderItem={({ item }) => (
-            <GameCard
-              game={item as any}
-              onJoin={() => handleJoin(item)}
-              onPress={() => navigation.navigate('GameDetail', { gameId: item.id })}
-            />
+          renderItem={({ item, index }) => (
+            <FadeSlideIn index={index}>
+              <GameCard
+                game={item as any}
+                onJoin={() => handleJoin(item)}
+                onPress={() => navigation.navigate('GameDetail', { gameId: item.id })}
+              />
+            </FadeSlideIn>
           )}
           refreshControl={
             <RefreshControl
@@ -224,56 +291,67 @@ export function HomeScreen() {
         <FlatList
           data={courts}
           keyExtractor={(c) => c.id}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const { color, label } = getCourtStatus(item.id);
             const checkins = courtActivity[item.id] ?? 0;
             const gameCount = games.filter(g => g.court_id === item.id).length;
             return (
-              <TouchableOpacity
-                style={styles.courtCard}
-                onPress={() => navigation.navigate('CourtDetail', { courtId: item.id })}
-                activeOpacity={0.75}
-              >
-                {/* Glow bar */}
-                <View style={[styles.courtGlowBar, { backgroundColor: color, shadowColor: color }]} />
-
-                <View style={styles.courtBody}>
-                  <View style={styles.courtTop}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.courtName}>{item.name}</Text>
-                      <Text style={styles.courtMeta}>
-                        {item.neighborhood.toUpperCase()} · {item.is_indoor ? 'INDOOR' : 'OUTDOOR'}
-                        {item.has_lighting ? ' · LIT' : ''}
-                      </Text>
-                    </View>
-                    <View style={[styles.courtBadge, { borderColor: color }]}>
-                      <View style={[styles.courtBadgeDot, { backgroundColor: color }]} />
-                      <Text style={[styles.courtBadgeText, { color }]}>{label}</Text>
-                    </View>
+              <FadeSlideIn index={index}>
+                <TouchableOpacity
+                  style={styles.courtCard}
+                  onPress={() => navigation.navigate('CourtDetail', { courtId: item.id })}
+                  activeOpacity={0.75}
+                >
+                  {/* Photo thumbnail */}
+                  <View style={styles.courtThumbWrap}>
+                    <Image
+                      source={{ uri: getCourtPhoto(item.name) }}
+                      style={styles.courtThumb}
+                      resizeMode="cover"
+                    />
+                    <View style={[styles.courtThumbOverlay, { backgroundColor: `${color}25` }]} />
                   </View>
 
-                  {(gameCount > 0 || checkins > 0) && (
-                    <View style={styles.courtFooter}>
-                      {gameCount > 0 && (
-                        <View style={styles.courtChip}>
-                          <Text style={[styles.courtChipText, { color: Colors.primary }]}>
-                            {gameCount} GAME{gameCount > 1 ? 'S' : ''}
-                          </Text>
-                        </View>
-                      )}
-                      {checkins > 0 && (
-                        <View style={styles.courtChip}>
-                          <Text style={[styles.courtChipText, { color: Colors.secondary }]}>
-                            {checkins} HERE
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </View>
+                  <View style={[styles.courtGlowBar, { backgroundColor: color, shadowColor: color }]} />
 
-                <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ alignSelf: 'center', marginRight: 14 }} />
-              </TouchableOpacity>
+                  <View style={styles.courtBody}>
+                    <View style={styles.courtTop}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.courtName}>{item.name}</Text>
+                        <Text style={styles.courtMeta}>
+                          {item.neighborhood.toUpperCase()} · {item.is_indoor ? 'INDOOR' : 'OUTDOOR'}
+                          {item.has_lighting ? ' · LIT' : ''}
+                        </Text>
+                      </View>
+                      <View style={[styles.courtBadge, { borderColor: color }]}>
+                        <View style={[styles.courtBadgeDot, { backgroundColor: color }]} />
+                        <Text style={[styles.courtBadgeText, { color }]}>{label}</Text>
+                      </View>
+                    </View>
+
+                    {(gameCount > 0 || checkins > 0) && (
+                      <View style={styles.courtFooter}>
+                        {gameCount > 0 && (
+                          <View style={styles.courtChip}>
+                            <Text style={[styles.courtChipText, { color: Colors.primary }]}>
+                              {gameCount} GAME{gameCount > 1 ? 'S' : ''}
+                            </Text>
+                          </View>
+                        )}
+                        {checkins > 0 && (
+                          <View style={styles.courtChip}>
+                            <Text style={[styles.courtChipText, { color: Colors.secondary }]}>
+                              {checkins} HERE
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+
+                  <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ alignSelf: 'center', marginRight: 14 }} />
+                </TouchableOpacity>
+              </FadeSlideIn>
             );
           }}
           refreshControl={
@@ -299,48 +377,63 @@ function StatBox({ value, label, color }: { value: number; label: string; color:
   );
 }
 
+function SkeletonHeader() {
+  const shimmer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.5] });
+
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerInner}>
+        <View style={styles.logoWrap}>
+          <View style={styles.logoDiamond} />
+          <Text style={styles.logoText}>BLACKTOP</Text>
+          <Text style={styles.logoTextRed}>JC</Text>
+        </View>
+        <View style={styles.liveWrap}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>LIVE</Text>
+        </View>
+      </View>
+      <View style={styles.heroBody}>
+        <Text style={styles.heroEyebrow}>JERSEY CITY · PICKUP BASKETBALL</Text>
+        <Text style={styles.heroTitle}>
+          FIND YOUR{'\n'}<Text style={styles.heroRed}>RUN.</Text>
+        </Text>
+        <View style={styles.heroRule} />
+        <Text style={styles.heroSub}>Real courts · Real players · Right now</Text>
+      </View>
+      <View style={styles.statsBar}>
+        {[Colors.primary, Colors.success, Colors.textSecondary].map((color, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <View style={styles.statsDivider} />}
+            <View style={styles.statBox}>
+              <Animated.View style={{ width: 32, height: 28, backgroundColor: color, opacity, borderRadius: 2 }} />
+              <Animated.View style={{ width: 60, height: 8, backgroundColor: '#333', opacity, borderRadius: 2, marginTop: 4 }} />
+            </View>
+          </React.Fragment>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
-
-  loader: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loaderDiamond: {
-    width: 20,
-    height: 20,
-    backgroundColor: Colors.primary,
-    transform: [{ rotate: '45deg' }],
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-  },
-  loaderText: {
-    fontFamily: 'BebasNeue_400Regular',
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
-    letterSpacing: 4,
-  },
+  skeletonList: { padding: Spacing.md, paddingBottom: 40 },
 
   // ── Header
   header: {
     backgroundColor: '#000000',
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderRed,
-  },
-  headerGridLine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderBottomWidth: 0,
-    opacity: 0.03,
-    backgroundColor: 'transparent',
   },
   headerInner: {
     flexDirection: 'row',
@@ -405,7 +498,6 @@ const styles = StyleSheet.create({
     color: Colors.success,
     letterSpacing: 2,
   },
-
   heroBody: {
     paddingHorizontal: Spacing.md,
     paddingTop: 4,
@@ -539,7 +631,6 @@ const styles = StyleSheet.create({
 
   list: { padding: Spacing.md, paddingBottom: 40 },
 
-  // Empty state
   empty: {
     alignItems: 'center',
     paddingVertical: 60,
@@ -548,7 +639,6 @@ const styles = StyleSheet.create({
   emptyIconWrap: {
     width: 64,
     height: 64,
-    borderRadius: 0,
     backgroundColor: `${Colors.primary}10`,
     borderWidth: 1,
     borderColor: Colors.borderRed,
@@ -583,6 +673,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
+  },
+  courtThumbWrap: {
+    width: 70,
+    position: 'relative',
+  },
+  courtThumb: {
+    width: 70,
+    height: '100%' as any,
+  },
+  courtThumbOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
   },
   courtGlowBar: {
     width: 4,

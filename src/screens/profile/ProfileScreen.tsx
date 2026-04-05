@@ -84,9 +84,17 @@ export function ProfileScreen() {
     >
       {/* Avatar + Name */}
       <View style={styles.profileHeader}>
-        <View style={[styles.avatarRing, { borderColor: tierColor }]}>
-          <Avatar user={user} size={80} />
+        {/* Diamond glow ring behind avatar */}
+        <View style={styles.avatarWrap}>
+          <View style={[styles.avatarGlowRing, {
+            borderColor: tierColor,
+            shadowColor: tierColor,
+          }]} />
+          <View style={[styles.avatarRing, { borderColor: tierColor }]}>
+            <Avatar user={user} size={80} />
+          </View>
         </View>
+
         <View style={styles.nameSection}>
           <View style={styles.nameRow}>
             <Text style={styles.displayName}>{user.display_name}</Text>
@@ -114,13 +122,28 @@ export function ProfileScreen() {
       </View>
 
       {/* ELO Card */}
-      <View style={styles.card}>
+      <View style={[styles.card, { borderColor: `${tierColor}40` }]}>
         <Text style={styles.cardLabel}>ELO RATING</Text>
         <View style={styles.eloRow}>
-          <Text style={[styles.eloNumber, { color: tierColor }]}>
+          <Text style={[
+            styles.eloNumber,
+            {
+              color: tierColor,
+              textShadowColor: tierColor,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 16,
+            },
+          ]}>
             {isRated ? user.elo_rating : '—'}
           </Text>
-          <View style={[styles.tierBadge, { backgroundColor: `${tierColor}20`, borderColor: tierColor }]}>
+          <View style={[styles.tierBadge, {
+            backgroundColor: `${tierColor}15`,
+            borderColor: tierColor,
+            shadowColor: tierColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+          }]}>
             <Text style={[styles.tierText, { color: tierColor }]}>{tier.toUpperCase()}</Text>
           </View>
         </View>
@@ -268,7 +291,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
   profileHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, padding: Spacing.md },
-  avatarRing: { width: 88, height: 88, borderRadius: 44, borderWidth: 2.5, padding: 2, alignItems: 'center', justifyContent: 'center' },
+  avatarWrap: { position: 'relative', width: 92, height: 92, alignItems: 'center', justifyContent: 'center' },
+  avatarGlowRing: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    transform: [{ rotate: '45deg' }],
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+  },
+  avatarRing: { width: 88, height: 88, borderRadius: 44, borderWidth: 2, padding: 2, alignItems: 'center', justifyContent: 'center' },
   nameSection: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   displayName: { fontFamily: 'BebasNeue_400Regular', fontSize: 24, color: Colors.textPrimary, letterSpacing: 1 },
@@ -278,7 +312,7 @@ const styles = StyleSheet.create({
   posTag: { backgroundColor: `${Colors.secondary}15`, borderRadius: BorderRadius.full, paddingHorizontal: 7, paddingVertical: 1, borderWidth: 1, borderColor: Colors.secondary },
   posTagText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.secondary },
   neighborhood: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4 },
-  card: { marginHorizontal: Spacing.md, marginBottom: Spacing.md, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  card: { marginHorizontal: Spacing.md, marginBottom: Spacing.md, backgroundColor: '#080808', borderRadius: 0, padding: Spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
   cardLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 2, marginBottom: Spacing.sm },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   eloRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
@@ -291,10 +325,21 @@ const styles = StyleSheet.create({
   tabBtnActive: { backgroundColor: Colors.primary },
   tabBtnText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.xs, color: Colors.textMuted },
   tabBtnTextActive: { color: Colors.textPrimary },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  statBox: { flex: 1, minWidth: '30%', alignItems: 'center', paddingVertical: Spacing.sm, backgroundColor: Colors.cardElevated, borderRadius: BorderRadius.md },
-  statBoxValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 24, color: Colors.textPrimary },
-  statBoxLabel: { fontFamily: 'RobotoCondensed_400Regular', fontSize: FontSize.xs, color: Colors.textMuted },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  statBox: {
+    flex: 1,
+    minWidth: '30%',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    backgroundColor: '#0A0A0A',
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.primary,
+  },
+  statBoxValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 26, color: Colors.textPrimary },
+  statBoxLabel: { fontFamily: 'RobotoCondensed_700Bold', fontSize: 8, color: Colors.textMuted, letterSpacing: 1.5 },
   proCta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md, backgroundColor: `${Colors.secondary}10`, borderRadius: BorderRadius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.secondary },
   proCtaText: { fontFamily: 'RobotoCondensed_700Bold', fontSize: FontSize.sm, color: Colors.secondary, flex: 1 },
   crewBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

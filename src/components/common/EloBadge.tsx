@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { getEloTier, getEloColor, FontSize, BorderRadius, Spacing } from '@/theme';
+import { getEloTier, getEloColor, FontSize, Spacing } from '@/theme';
 
 interface Props {
   rating: number;
@@ -14,7 +14,7 @@ export function EloBadge({ rating, rated, size = 'md' }: Props) {
 
   if (size === 'sm') {
     return (
-      <View style={[styles.pill, { backgroundColor: `${color}22`, borderColor: color }]}>
+      <View style={[styles.pill, { backgroundColor: `${color}18`, borderColor: `${color}80` }]}>
         <Text style={[styles.pillText, { color }]}>{tier}</Text>
       </View>
     );
@@ -22,17 +22,30 @@ export function EloBadge({ rating, rated, size = 'md' }: Props) {
 
   if (size === 'md') {
     return (
-      <View style={[styles.pill, styles.pillMd, { backgroundColor: `${color}22`, borderColor: color }]}>
+      <View style={[styles.pill, styles.pillMd, { backgroundColor: `${color}18`, borderColor: `${color}80` }]}>
         <Text style={[styles.pillText, { color }]}>{tier}</Text>
         {rated && <Text style={[styles.ratingText, { color }]}> · {rating}</Text>}
       </View>
     );
   }
 
-  // lg
+  // lg — with glow
   return (
-    <View style={[styles.badgeLg, { backgroundColor: `${color}15`, borderColor: color }]}>
-      <Text style={[styles.badgeLgRating, { color }]}>{rated ? rating : '—'}</Text>
+    <View style={[
+      styles.badgeLg,
+      {
+        backgroundColor: `${color}10`,
+        borderColor: color,
+        shadowColor: color,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 16,
+        elevation: 8,
+      },
+    ]}>
+      <Text style={[styles.badgeLgRating, { color, textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }]}>
+        {rated ? rating : '—'}
+      </Text>
       <Text style={[styles.badgeLgTier, { color }]}>{tier.toUpperCase()}</Text>
     </View>
   );
@@ -44,7 +57,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
-    borderRadius: BorderRadius.full,
+    borderRadius: 2,
     borderWidth: 1,
   },
   pillMd: {
@@ -64,17 +77,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    borderRadius: 2,
     borderWidth: 1.5,
   },
   badgeLgRating: {
     fontFamily: 'BebasNeue_400Regular',
-    fontSize: 36,
-    lineHeight: 38,
+    fontSize: 40,
+    lineHeight: 42,
   },
   badgeLgTier: {
     fontFamily: 'RobotoCondensed_700Bold',
     fontSize: FontSize.xs,
-    letterSpacing: 2,
+    letterSpacing: 3,
+    marginTop: 2,
   },
 });

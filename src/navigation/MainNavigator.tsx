@@ -172,7 +172,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               name={iconName as any}
               size={24}
               color={isFocused ? Colors.primary : Colors.textMuted}
+              style={isFocused ? {
+                shadowColor: Colors.primary,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 8,
+              } : undefined}
             />
+            {isFocused && <View style={styles.tabGlowDot} />}
           </TouchableOpacity>
         );
       })}
@@ -205,9 +212,9 @@ const stackScreenOptions = {
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
+    backgroundColor: '#050505',
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: Colors.borderRed,
     paddingTop: Spacing.sm,
     alignItems: 'center',
   },
@@ -216,6 +223,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
+    gap: 4,
+  },
+  tabGlowDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
   },
   createButton: {
     flex: 1,
