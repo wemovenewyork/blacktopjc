@@ -324,6 +324,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.lg,
+    borderWidth: 3,
+    borderColor: 'yellow',
   },
   heroEyebrow: {
     fontFamily: 'RobotoCondensed_400Regular',
