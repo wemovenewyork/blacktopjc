@@ -8,12 +8,13 @@ import {
   RefreshControl,
   Animated,
   Easing,
+  Image,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useRealtime } from '@/hooks/useRealtime';
 import { getCourtPhoto } from '@/lib/courtPhotos';
@@ -196,14 +197,12 @@ export function HomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
 
       {/* ── HERO ── */}
-      <View style={styles.heroOuter}>
-        {/* Full-bleed court photo */}
-        <Image
-          source={{ uri: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=900&q=80&fit=crop' }}
-          style={styles.heroBgImage}
-          resizeMode="cover"
-        />
-        {/* Dark scrim — heavier at bottom so text pops */}
+      <ImageBackground
+        source={{ uri: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=900&q=80&fit=crop' }}
+        style={styles.heroOuter}
+        imageStyle={styles.heroBgImage}
+      >
+        {/* Dark scrim */}
         <View style={styles.heroBgScrim} />
 
         {/* Nav row — logo + live badge */}
@@ -237,7 +236,7 @@ export function HomeScreen() {
           <View style={styles.statsDivider} />
           <StatBox value={displayTotalCourts} label="TOTAL COURTS" color={Colors.textSecondary} />
         </View>
-      </View>
+      </ImageBackground>
 
       {/* ── TAB BAR ── */}
       <View style={styles.tabBar}>
@@ -397,8 +396,7 @@ function SkeletonHeader() {
   const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.5] });
 
   return (
-    <View style={styles.heroOuter}>
-      <View style={[styles.heroBgScrim, { backgroundColor: 'rgba(0,0,0,0.88)' }]} />
+    <View style={[styles.heroOuter, { backgroundColor: '#0A0A0A' }]}>
       <View style={styles.headerInner}>
         <View style={styles.logoWrap}>
           <View style={styles.logoDiamond} />
