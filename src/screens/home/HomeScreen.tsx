@@ -195,24 +195,31 @@ export function HomeScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
 
-      {/* ── HEADER ── */}
-      <View style={styles.header}>
+      {/* ── HERO ── */}
+      <View style={styles.heroOuter}>
+        {/* Full-bleed court photo */}
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=900&q=80&fit=crop' }}
+          style={styles.heroBgImage}
+          resizeMode="cover"
+        />
+        {/* Dark scrim — heavier at bottom so text pops */}
+        <View style={styles.heroBgScrim} />
+
+        {/* Nav row — logo + live badge */}
         <View style={styles.headerInner}>
-          {/* Logo */}
           <View style={styles.logoWrap}>
             <View style={styles.logoDiamond} />
             <Text style={styles.logoText}>BLACKTOP</Text>
             <Text style={styles.logoTextRed}>JC</Text>
           </View>
-
-          {/* Live indicator with pulse */}
           <View style={styles.liveWrap}>
             <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
             <Text style={styles.liveText}>LIVE</Text>
           </View>
         </View>
 
-        {/* Hero text */}
+        {/* Hero copy */}
         <View style={styles.heroBody}>
           <Text style={styles.heroEyebrow}>JERSEY CITY · PICKUP BASKETBALL</Text>
           <Text style={styles.heroTitle}>
@@ -222,7 +229,7 @@ export function HomeScreen() {
           <Text style={styles.heroSub}>Real courts · Real players · Right now</Text>
         </View>
 
-        {/* Stats bar with count-up */}
+        {/* Stats bar */}
         <View style={styles.statsBar}>
           <StatBox value={displayGames} label="GAMES OPEN" color={Colors.primary} />
           <View style={styles.statsDivider} />
@@ -390,7 +397,8 @@ function SkeletonHeader() {
   const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.5] });
 
   return (
-    <View style={styles.header}>
+    <View style={styles.heroOuter}>
+      <View style={[styles.heroBgScrim, { backgroundColor: 'rgba(0,0,0,0.88)' }]} />
       <View style={styles.headerInner}>
         <View style={styles.logoWrap}>
           <View style={styles.logoDiamond} />
@@ -429,19 +437,39 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
   skeletonList: { padding: Spacing.md, paddingBottom: 40 },
 
-  // ── Header
-  header: {
-    backgroundColor: '#000000',
+  // ── Hero with photo background
+  heroOuter: {
+    position: 'relative',
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderRed,
+    overflow: 'hidden',
+  },
+  heroBgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  heroBgScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // heavy scrim so text stays legible — dark at top, near-black at bottom
+    backgroundColor: 'rgba(0,0,0,0.72)',
   },
   headerInner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
+    position: 'relative',
   },
   logoWrap: {
     flexDirection: 'row',
@@ -502,6 +530,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingTop: 4,
     paddingBottom: Spacing.md,
+    position: 'relative',
   },
   heroEyebrow: {
     fontFamily: 'RobotoCondensed_700Bold',
@@ -545,7 +574,9 @@ const styles = StyleSheet.create({
   statsBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: 'rgba(255,255,255,0.12)',
+    position: 'relative',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   statBox: {
     flex: 1,
